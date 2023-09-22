@@ -1,7 +1,6 @@
 package com.whis.ui.screen.workoutlist.ui
 
 import android.util.Log
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,17 +43,18 @@ import com.whis.ui.customComposables.CustomText
 import com.whis.ui.customComposables.GifImage
 import com.whis.ui.customComposables.MainLayout
 import com.whis.ui.customComposables.ShimmerListItem
+import com.whis.ui.screen.SharedViewModel
 import com.whis.ui.screen.workoutlist.viewmodel.WorkoutListViewModel
 import com.whis.ui.theme.Green
 import com.whis.ui.theme.Red
 import com.whis.ui.theme.White
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WorkoutListScreen(
     workoutListViewModel: WorkoutListViewModel,
     navHostController: NavHostController,
     modifier: Modifier = Modifier,
+    sharedViewModel: SharedViewModel,
 ) {
     val workouts by workoutListViewModel.workoutList.observeAsState()
     val isLoading by workoutListViewModel.isLoading.observeAsState()
@@ -65,6 +65,7 @@ fun WorkoutListScreen(
         navHostController = navHostController,
         actions = {
             IconButton(onClick = {
+                sharedViewModel.setWorkout(null)
                 workoutListViewModel.setWorkout(null)
                 navHostController.navigate("workout_edit")
             }) {
@@ -88,13 +89,14 @@ fun WorkoutListScreen(
                                     modifier = modifier,
                                     workout = item!!,
                                     workoutListViewModel = workoutListViewModel,
+                                    sharedViewModel = sharedViewModel,
                                     navHostController = navHostController
                                 )
                             }
                         }
                     }else{
                         Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                            GifImage(image_url = R.drawable.no_record_icon, modifier = modifier.height(250.dp))
+                            GifImage(imageUrl = R.drawable.no_record_icon, modifier = modifier.height(250.dp))
                             CustomText(value = "No Workouts",modifier = modifier.padding(top = 10.dp))
                         }
                     }
@@ -107,7 +109,8 @@ fun WorkoutItem(
     workout: WorkoutListBean.Data,
     workoutListViewModel: WorkoutListViewModel,
     navHostController: NavHostController,
-    modifier: Modifier
+    modifier: Modifier,
+    sharedViewModel: SharedViewModel
 ) {
     var showRemoveWorkout by remember { mutableStateOf(false) }
 
@@ -118,6 +121,7 @@ fun WorkoutItem(
             .pointerInput(Unit) {
                 detectTapGestures(onTap = {
                     Log.e("TAG", "WorkoutItem: ${workout.title}",)
+                    sharedViewModel.setWorkout(workout)
                     workoutListViewModel.setWorkout(workout)
                     navHostController.navigate("workout_edit")
                 }, onLongPress = {
@@ -127,7 +131,7 @@ fun WorkoutItem(
     ) {
         Box(contentAlignment = Alignment.BottomStart) {
             GifImage(
-                image_url = workout.image_url!!,
+                imageUrl = workout.image_url!!,
                 contentScale = ContentScale.FillBounds,
                 modifier = Modifier
                     .height(150.dp)

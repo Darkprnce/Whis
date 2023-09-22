@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -65,7 +64,6 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -104,10 +102,11 @@ fun MainLayout(
     modifier: Modifier = Modifier,
     isbackAvailable: Boolean = true,
     onBackClick: (() -> Unit)? = null,
+    snackBarHostState:SnackbarHostState = remember { SnackbarHostState() },
     actions: @Composable() (RowScope.() -> Unit)? = null,
     content: @Composable (SnackbarHostState) -> Unit,
 ) {
-    val snackBarHostState = remember { SnackbarHostState() }
+    //val snackBarHostState = remember { SnackbarHostState() }
 
     Scaffold(
         modifier = modifier,
@@ -236,6 +235,7 @@ fun CustomTextField(
     ismobile: Boolean = false,
     ispincode: Boolean = false,
     iscapital: Boolean = false,
+    isLast: Boolean = false,
     starticon: @Composable() (() -> Unit)? = null,
     endicon: @Composable() (() -> Unit)? = null,
 ) {
@@ -301,7 +301,12 @@ fun CustomTextField(
                     }) as FocusRequester
                 ).onPreviewKeyEvent {
                     if (it.key == Key.Tab && it.nativeKeyEvent.action == ACTION_DOWN){
-                        focusManager.moveFocus(FocusDirection.Down)
+                        if (isLast) {
+                            keyboardController!!.hide()
+                            focusManager.clearFocus()
+                        } else {
+                            focusManager.moveFocus(FocusDirection.Down)
+                        }
                         true
                     } else {
                         false
@@ -330,7 +335,14 @@ fun CustomTextField(
                 false
             },
         keyboardActions = KeyboardActions(
-            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            onNext = {
+                if (isLast) {
+                    keyboardController!!.hide()
+                    focusManager.clearFocus()
+                } else {
+                    focusManager.moveFocus(FocusDirection.Down)
+                }
+            }
         ),
             keyboardOptions = KeyboardOptions.Default.copy(
                 capitalization =
@@ -379,7 +391,7 @@ fun CustomTextField(
 
 @Composable
 fun GifImage(
-    image_url: Any,
+    imageUrl: Any,
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
 ) {
@@ -395,7 +407,7 @@ fun GifImage(
         .build()
     Image(
         painter = rememberAsyncImagePainter(
-            ImageRequest.Builder(context).data(data = image_url).apply(block = {
+            ImageRequest.Builder(context).data(data = imageUrl).apply(block = {
                 size(Size.ORIGINAL)
             }).build(), imageLoader = imageLoader
         ),

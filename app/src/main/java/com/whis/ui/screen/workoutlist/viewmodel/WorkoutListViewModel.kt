@@ -34,23 +34,10 @@ class WorkoutListViewModel @Inject constructor(
     var selectedWorkout = mutableStateOf(WorkoutListBean.Data())
 
     private var exerciseList: List<ExerciseListBean.Data?> = arrayListOf()
-    var exercises_search = mutableStateListOf<ExerciseListBean.Data?>()
+    var exercises_search = mutableStateOf<List<ExerciseListBean.Data?>>(listOf())
     val api_status: MutableLiveData<String> = MutableLiveData("")
     var workout_exercises = mutableStateListOf<ExerciseListBean.Data>()
     var isLoading: MutableLiveData<Boolean> = MutableLiveData(false)
-
-    val adapter: LazyAnimatedColumnAdapter<WorkoutListBean.Data> =
-        LazyAnimatedColumnAdapter(emptyList(), isReversed = true)
-
-
-    fun addItem(item: WorkoutListBean.Data) {
-        adapter.addItem(item)
-    }
-
-    fun removeItem(index: Int) {
-        adapter.removeItem(index)
-    }
-
 
     init {
         getWorkouts()
@@ -98,10 +85,10 @@ class WorkoutListViewModel @Inject constructor(
             val bean = exerciseListRepository.getExerciseList(data)
             if (bean != null) {
                 exerciseList = bean.data!!
-                exercises_search = bean.data!!.toMutableStateList()
+                exercises_search.value = bean.data!!
             } else {
                 exerciseList = arrayListOf()
-                exercises_search = mutableStateListOf()
+                exercises_search.value = mutableStateListOf()
             }
         }
     }
@@ -109,10 +96,12 @@ class WorkoutListViewModel @Inject constructor(
     fun setWorkout(workout: WorkoutListBean.Data?) {
         if (workout != null) {
             selectedWorkout.value = workout
-            if (exerciseList.isNotEmpty()) {
-                workout_exercises = mutableStateListOf()
-                for (item in workout.exercises_id!!) {
-                    workout_exercises.add(exerciseList.find { it!!.id == item!!.id }!!)
+            viewModelScope.launch(Dispatchers.Default) {
+                if (exerciseList.isNotEmpty()) {
+                    workout_exercises = mutableStateListOf()
+                    for (item in workout.exercises_id!!) {
+                        workout_exercises.add(exerciseList.find { it!!.id == item!!.id }!!)
+                    }
                 }
             }
         } else {
@@ -129,24 +118,28 @@ class WorkoutListViewModel @Inject constructor(
     }
 
     fun searchExercise(it: String) {
-        if (it.isNotEmpty()) {
-            exercises_search = exerciseList.filter { item ->
-                item!!.name!!.contains(it)
-                        || item.bodypart!!.contains(it)
-                        || item.equipment!!.contains(it)
-                        || item.target!!.contains(it)
-            }.toMutableStateList()
-        } else {
-            exercises_search = exerciseList.toMutableStateList()
+        viewModelScope.launch(Dispatchers.Default) {
+            if (it.isNotEmpty()) {
+                exercises_search.value = exerciseList.filter { item ->
+                    item!!.name!!.trim().contains(it,ignoreCase = true)
+                            || item.bodypart!!.trim().contains(it,ignoreCase = true)
+                            || item.equipment!!.trim().contains(it,ignoreCase = true)
+                            || item.target!!.trim().contains(it,ignoreCase = true)
+                }
+            } else {
+                exercises_search.value = exerciseList
+            }
         }
     }
 
     fun addExercise(item: ExerciseListBean.Data) {
-        val find_item = workout_exercises.find { it.id == item.id }
-        if (find_item != null) {
-            workout_exercises.remove(find_item)
-        } else {
-            workout_exercises.add(item)
+        viewModelScope.launch(Dispatchers.Default) {
+            val find_item = workout_exercises.find { it.id == item.id }
+            if (find_item != null) {
+                workout_exercises.remove(find_item)
+            } else {
+                workout_exercises.add(item)
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package com.whis.Network
 
+import com.whis.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,7 +30,7 @@ object NetworkModule {
             .build()
 
         return Retrofit.Builder()
-            .baseUrl("https://canime.in/")
+            .baseUrl(BuildConfig.BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .client(client)
             .build()

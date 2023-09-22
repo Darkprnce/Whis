@@ -1,5 +1,6 @@
 package com.whis.repository
 
+import com.whis.BuildConfig
 import com.whis.Network.ApiServices
 import com.whis.model.WorkoutAddBean
 import com.whis.model.WorkoutListBean
@@ -18,7 +19,7 @@ class WorkoutRemoveRepository @Inject constructor(
 
     suspend fun removeWorkout(data: HashMap<String?, Any?>): WorkoutRemoveBean? =
         withContext(Dispatchers.IO) {
-            val response = workoutClient.workout_remove(API_KEY,data)
+            val response = workoutClient.workout_remove(BuildConfig.API_KEY,data)
             response.body()
         }
 }

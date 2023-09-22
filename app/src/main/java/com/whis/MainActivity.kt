@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.whis.ui.screen.SharedViewModel
 import com.whis.ui.screen.workoutadd.ui.WorkoutEditScreen
+import com.whis.ui.screen.workoutadd.viewmodel.WorkoutAddViewModel
 import com.whis.ui.screen.workoutlist.ui.WorkoutListScreen
 import com.whis.ui.screen.workoutlist.viewmodel.WorkoutListViewModel
 import com.whis.ui.theme.WhisTheme
@@ -22,8 +24,8 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val sharedViewModel: SharedViewModel by viewModels()
 
-        val workoutListViewModel: WorkoutListViewModel by viewModels()
         setContent {
             WhisTheme {
                 Surface(
@@ -35,17 +37,20 @@ class MainActivity : ComponentActivity() {
                         composable(
                             route = "workout_list",
                             content = {
+                                val workoutListViewModel: WorkoutListViewModel by viewModels()
                                 WorkoutListScreen(
                                     workoutListViewModel = workoutListViewModel,
+                                    sharedViewModel=sharedViewModel,
                                     navHostController = navController
                                 )
                             })
                         composable(
                             route = "workout_edit",
                             content = {
-                                Log.e("TAG", "onCreate: ", )
+                                val workoutAddViewModel: WorkoutAddViewModel by viewModels()
                                 WorkoutEditScreen(
-                                    workoutListViewModel = workoutListViewModel,
+                                    viewModel = workoutAddViewModel,
+                                    sharedViewModel=sharedViewModel,
                                     navHostController = navController
                                 )
                             })

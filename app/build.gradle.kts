@@ -1,8 +1,23 @@
+import java.util.*
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("dagger.hilt.android.plugin")
     id("kotlin-kapt")
+}
+val properties = Properties()
+properties.load(project.rootProject.file("local.properties").reader())
+
+inline fun <reified ValueT> com.android.build.api.dsl.VariantDimension.buildConfigField(
+    name: String,
+    value: ValueT
+) {
+    val resolvedValue = when (value) {
+        is String -> "\"$value\"" // hate this
+        else -> value
+    }.toString()
+    buildConfigField(ValueT::class.java.simpleName, name, resolvedValue)
 }
 
 android {
@@ -23,6 +38,10 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField( "BASE_URL", properties.getProperty("BASE_URL"))
+            buildConfigField( "API_KEY", properties.getProperty("API_KEY"))
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -41,6 +60,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.3"
@@ -90,7 +110,6 @@ dependencies {
     //Coil
     implementation("io.coil-kt:coil-compose:2.3.0")
     implementation("io.coil-kt:coil-gif:2.0.0-rc02")
-    implementation("io.coil-kt:coil-compose:2.3.0")
 
     //Room
     implementation("androidx.room:room-runtime:2.5.2")
@@ -101,5 +120,12 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.5.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.1")
 
+    //Lifecycle
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.6.0")
+
+    //Reorder LazyColumn
     implementation("org.burnoutcrew.composereorderable:reorderable:0.9.6")
+
+    //Logging
+    implementation("com.jakewharton.timber:timber:5.0.1")
 }

@@ -1,5 +1,6 @@
 package com.whis.repository
 
+import com.whis.BuildConfig
 import com.whis.Network.ApiServices
 import com.whis.model.ExerciseListBean
 import com.whis.model.WorkoutListBean
@@ -17,7 +18,7 @@ class ExerciseListRepository @Inject constructor(
 
     suspend fun getExerciseList(data: HashMap<String?, Any?>): ExerciseListBean? =
         withContext(Dispatchers.IO) {
-            val response = workoutClient.exercise_list(API_KEY,data)
+            val response = workoutClient.exercise_list(BuildConfig.API_KEY,data)
             response.body()
         }
 }
