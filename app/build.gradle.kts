@@ -39,8 +39,8 @@ android {
 
     buildTypes {
         debug {
-            buildConfigField( "BASE_URL", properties.getProperty("BASE_URL"))
-            buildConfigField( "API_KEY", properties.getProperty("API_KEY"))
+            buildConfigField("BASE_URL", properties.getProperty("BASE_URL"))
+            buildConfigField("API_KEY", properties.getProperty("API_KEY"))
         }
         release {
             isMinifyEnabled = false
@@ -96,13 +96,14 @@ dependencies {
 
     //Dagger Hilt
     implementation("com.google.dagger:hilt-android:2.46.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
     kapt("com.google.dagger:hilt-android-compiler:2.46.1")
 
     //Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation ("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.10")
-    implementation ("com.squareup.okhttp3:okhttp:5.0.0-alpha.6")
+    implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.10")
+    implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.6")
 
     //Pager
     implementation("com.google.accompanist:accompanist-pager:0.29.1-alpha")

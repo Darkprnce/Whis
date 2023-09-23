@@ -37,9 +37,7 @@ class MainActivity : ComponentActivity() {
                         composable(
                             route = "workout_list",
                             content = {
-                                val workoutListViewModel: WorkoutListViewModel by viewModels()
                                 WorkoutListScreen(
-                                    workoutListViewModel = workoutListViewModel,
                                     sharedViewModel=sharedViewModel,
                                     navHostController = navController
                                 )
@@ -47,9 +45,7 @@ class MainActivity : ComponentActivity() {
                         composable(
                             route = "workout_edit",
                             content = {
-                                val workoutAddViewModel: WorkoutAddViewModel by viewModels()
                                 WorkoutEditScreen(
-                                    viewModel = workoutAddViewModel,
                                     sharedViewModel=sharedViewModel,
                                     navHostController = navController
                                 )

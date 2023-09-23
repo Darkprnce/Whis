@@ -1,19 +1,15 @@
 package com.whis.ui.screen.workoutadd.viewmodel
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.whis.Network.ValidationState
 import com.whis.model.ExerciseListBean
 import com.whis.model.WorkoutListBean
 import com.whis.repository.ExerciseListRepository
-import com.whis.repository.WorkoutAddRepository
-import com.whis.repository.WorkoutRemoveRepository
+import com.whis.repository.WorkoutRepository
 import com.whis.utils.SOME_ERROR_OCCURED
 import com.whis.utils.checkString
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -22,15 +18,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import javax.inject.Inject
 
 @HiltViewModel
 class WorkoutAddViewModel @Inject constructor(
-    private val workoutAddRepository: WorkoutAddRepository,
-    private val workoutRemoveRepository: WorkoutRemoveRepository,
+    private val workoutRepository: WorkoutRepository,
     private val exerciseListRepository: ExerciseListRepository
 ) : ViewModel() {
+
+    private val _showLoadingFlow = MutableStateFlow(false)
+    val showLoading = _showLoadingFlow.asStateFlow()
 
     private var exerciseList: List<ExerciseListBean.Data?> = arrayListOf()
 
@@ -99,6 +96,9 @@ class WorkoutAddViewModel @Inject constructor(
     val showExerciseMove = _showExerciseMoveFlow.asStateFlow()
 
 
+    fun setShowLoading(value: Boolean) {
+        _showLoadingFlow.value = value
+    }
     fun setTitle(value: String) {
         _titleInputFlow.value = value
     }
@@ -160,7 +160,6 @@ class WorkoutAddViewModel @Inject constructor(
             _selectedWorkout.value = WorkoutListBean.Data()
         }
         getExercises()
-        //api_status.postValue("")
     }
 
     private fun setData() {
@@ -178,6 +177,8 @@ class WorkoutAddViewModel @Inject constructor(
 
 
     private fun getExercises() {
+        val tag = "exercise_list"
+        _apiState.value = ValidationState.Loading(tag,true)
         val data = HashMap<String?, Any?>()
         data["username"] = "darkprnce"
         viewModelScope.launch(Dispatchers.IO) {
@@ -193,10 +194,12 @@ class WorkoutAddViewModel @Inject constructor(
                         _exercisesSearchFlow.value.find { it!!.id == item!!.id }!!.selected = true
                     }
                 }
+                _apiState.value = ValidationState.Loading(tag,false)
             } else {
                 exerciseList = arrayListOf()
                 _exercisesSearchFlow.value = mutableStateListOf()
                 _workoutExercisesFlow.value = mutableStateListOf()
+                _apiState.value = ValidationState.Loading(tag,false)
             }
         }
     }
@@ -224,7 +227,6 @@ class WorkoutAddViewModel @Inject constructor(
             } else {
                 _exercisesSearchFlow.value = exerciseList.toMutableStateList()
             }
-
         }
     }
 
@@ -247,7 +249,6 @@ class WorkoutAddViewModel @Inject constructor(
                     it
                 }
                 exerciseList.find { it!!.id == item.id }!!.selected = true
-                //_exercisesSearchFlow.value.find { it!!.id == item.id }!!.selected = true
             }
         //}
     }
@@ -259,8 +260,7 @@ class WorkoutAddViewModel @Inject constructor(
 
     fun addWorkout(data: HashMap<String?, Any?>) {
         val tag = "add_workout"
-        _apiState.value = ValidationState.Loading(tag)
-        //_isLoadingState.value = true
+        _apiState.value = ValidationState.Loading(tag,true)
         data.put("username", "darkprnce")
         for (item in data.values) {
             if (item is String || item is Int || item is Double || item is Float) {
@@ -268,26 +268,24 @@ class WorkoutAddViewModel @Inject constructor(
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            val bean = workoutAddRepository.addWorkout(data)
+            val bean = workoutRepository.addWorkout(data)
             if (bean != null) {
-                if (bean.status.equals("success")) {
+                _apiState.value = ValidationState.Loading(tag,false)
+                if (bean.status.equals("success",ignoreCase = true)) {
                     _apiState.value = ValidationState.Success(tag, bean.msg!!)
-                    //_isSuccessState.value = bean.msg!!
                 } else {
                     _apiState.value = ValidationState.Error(tag, bean.msg!!)
-                    //_isErrorState.value = bean.msg!!
                 }
             } else {
+                _apiState.value = ValidationState.Loading(tag,false)
                 _apiState.value = ValidationState.Error(tag, SOME_ERROR_OCCURED)
-                //_isErrorState.value = SOME_ERROR_OCCURED
             }
         }
     }
 
     fun removeWorkout(data: HashMap<String?, Any?>) {
         val tag = "remove_workout"
-        _apiState.value = ValidationState.Loading(tag)
-        //_isLoadingState.value = true
+        _apiState.value = ValidationState.Loading(tag,true)
         data.put("username", "darkprnce")
         for (item in data.values) {
             if (item is String || item is Int || item is Double || item is Float) {
@@ -295,18 +293,17 @@ class WorkoutAddViewModel @Inject constructor(
             }
         }
         viewModelScope.launch(Dispatchers.IO) {
-            val bean = workoutRemoveRepository.removeWorkout(data)
+            val bean = workoutRepository.removeWorkout(data)
             if (bean != null) {
-                if (bean.status.equals("success")) {
+                _apiState.value = ValidationState.Loading(tag,false)
+                if (bean.status.equals("success",ignoreCase = true)) {
                     _apiState.value = ValidationState.Success(tag, bean.msg!!)
-                    //_isSuccessState.value = bean.msg!!
                 } else {
                     _apiState.value = ValidationState.Error(tag, bean.msg!!)
-                    //_isErrorState.value = bean.msg!!
                 }
             } else {
+                _apiState.value = ValidationState.Loading(tag,false)
                 _apiState.value = ValidationState.Error(tag, SOME_ERROR_OCCURED)
-                //_isErrorState.value = SOME_ERROR_OCCURED
             }
         }
     }
@@ -314,7 +311,6 @@ class WorkoutAddViewModel @Inject constructor(
     fun validateForm() {
         if (_titleInputFlow.value.isEmpty() || _totalTimeInputFlow.value.isEmpty() || _userTimeInputFlow.value.isEmpty() || _imageurlInputFlow.value.isEmpty()) {
             _apiState.value = ValidationState.Error("validation", "Please fill all the fields")
-            //_isErrorState.value = "Please fill all the fields"
         } else {
             val data = HashMap<String?, Any?>()
             data["id"] = _selectedWorkout.value.id
@@ -338,10 +334,3 @@ class WorkoutAddViewModel @Inject constructor(
     }
 }
 
-sealed class ValidationState {
-    object Ideal : ValidationState()
-    data class Loading(val tag: String) : ValidationState()
-    data class Success(val tag: String, val msg: String) : ValidationState()
-    data class Error(val tag: String, val errorMessage: String) : ValidationState()
-
-}

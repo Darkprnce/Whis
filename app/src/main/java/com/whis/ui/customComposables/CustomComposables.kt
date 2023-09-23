@@ -2,7 +2,6 @@ package com.whis.ui.customComposables
 
 import android.os.Build.VERSION.SDK_INT
 import android.text.TextUtils
-import android.view.Gravity
 import android.view.KeyEvent.ACTION_DOWN
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -15,7 +14,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +32,6 @@ import androidx.compose.material.icons.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -72,7 +69,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -82,9 +79,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
 import androidx.navigation.NavHostController
 import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
@@ -94,66 +88,6 @@ import coil.request.ImageRequest
 import coil.size.Size
 import com.whis.ui.theme.White
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun MainLayout(
-    title: String,
-    navHostController: NavHostController,
-    modifier: Modifier = Modifier,
-    isbackAvailable: Boolean = true,
-    onBackClick: (() -> Unit)? = null,
-    snackBarHostState:SnackbarHostState = remember { SnackbarHostState() },
-    actions: @Composable() (RowScope.() -> Unit)? = null,
-    content: @Composable (SnackbarHostState) -> Unit,
-) {
-    //val snackBarHostState = remember { SnackbarHostState() }
-
-    Scaffold(
-        modifier = modifier,
-        topBar = {
-            TopAppBar(
-                title = {
-                    CustomText(title, isbold = true, color = White, txtsize = 16.sp)
-                },
-                navigationIcon = {
-                    if (isbackAvailable) {
-                        IconButton(onClick = {
-                            if (onBackClick != null) {
-                                onBackClick()
-                            } else {
-                                navHostController.popBackStack()
-                            }
-                        }) {
-                            Icon(
-                                Icons.Filled.KeyboardArrowLeft,
-                                "back_icon",
-                                tint = White
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                ),
-                actions = {
-                    if (actions != null) {
-                        actions()
-                    }
-                }
-            )
-        },
-        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
-        content = { padding ->
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .imePadding()
-            ) {
-                content(snackBarHostState)
-            }
-        })
-}
-
 @Composable
 fun CustomText(
     value: String,
@@ -162,6 +96,7 @@ fun CustomText(
     isheading: Boolean = false,
     color: Color? = null,
     txtsize: TextUnit = 14.sp,
+    txtStyle: TextStyle = MaterialTheme.typography.bodyMedium
 ) {
     Text(
         modifier = modifier,
@@ -169,7 +104,7 @@ fun CustomText(
         style = if (isheading) {
             MaterialTheme.typography.headlineMedium
         } else {
-            MaterialTheme.typography.bodyMedium
+            txtStyle
         },
         fontWeight = if (isbold) {
             FontWeight.Bold
@@ -236,8 +171,8 @@ fun CustomTextField(
     ispincode: Boolean = false,
     iscapital: Boolean = false,
     isLast: Boolean = false,
-    starticon: @Composable() (() -> Unit)? = null,
-    endicon: @Composable() (() -> Unit)? = null,
+    starticon: @Composable (() -> Unit)? = null,
+    endicon: @Composable (() -> Unit)? = null,
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
@@ -269,6 +204,7 @@ fun CustomTextField(
                     ispincodeValid = it.length >= 6
                 }
             },
+            enabled=isenabled,
             leadingIcon = starticon,
             trailingIcon = {
                 if (isError) {
@@ -387,149 +323,4 @@ fun CustomTextField(
         }
     }
     // return isError
-}
-
-@Composable
-fun GifImage(
-    imageUrl: Any,
-    modifier: Modifier = Modifier,
-    contentScale: ContentScale = ContentScale.Fit,
-) {
-    val context = LocalContext.current
-    val imageLoader = ImageLoader.Builder(context)
-        .components {
-            if (SDK_INT >= 28) {
-                add(ImageDecoderDecoder.Factory())
-            } else {
-                add(GifDecoder.Factory())
-            }
-        }.respectCacheHeaders(false)
-        .build()
-    Image(
-        painter = rememberAsyncImagePainter(
-            ImageRequest.Builder(context).data(data = imageUrl).apply(block = {
-                size(Size.ORIGINAL)
-            }).build(), imageLoader = imageLoader
-        ),
-        contentScale = contentScale,
-        contentDescription = null,
-        modifier = modifier.fillMaxWidth(),
-    )
-}
-
-
-@Composable
-fun CustomDialog(
-    onDismissRequest: () -> Unit,
-    isSmall: Boolean = true,
-    content: @Composable() (ColumnScope.() -> Unit)
-) {
-    Dialog(
-        onDismissRequest = { onDismissRequest() },
-        properties = DialogProperties(
-            decorFitsSystemWindows = true,
-            usePlatformDefaultWidth = false
-        )
-    ) {
-        var modifier = Modifier
-            .fillMaxWidth()
-            .padding(0.dp)
-        if (!isSmall) {
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(0.dp)
-                .height(600.dp)
-        }
-        val dialogWindowProvider = LocalView.current.parent as DialogWindowProvider
-        dialogWindowProvider.window.setGravity(Gravity.BOTTOM)
-        Card(
-            modifier = modifier,
-            shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
-        ) {
-            Column(
-                modifier = Modifier.padding(10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                content()
-            }
-        }
-    }
-}
-
-@Composable
-fun ShimmerListItem(
-    isLoading: Boolean,
-    contentAfterLoading: @Composable () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    if (isLoading) {
-        LazyColumn(
-            modifier = Modifier
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            val list = (0..8).map { it.toString() }
-            items(count = list.size) {
-                Row(modifier = modifier.padding(10.dp)) {
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(shape = RoundedCornerShape(15.dp))
-                            .shimmerEffect()
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(20.dp)
-                                .clip(shape = RoundedCornerShape(15.dp))
-                                .shimmerEffect()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth(0.7f)
-                                .height(20.dp)
-                                .clip(shape = RoundedCornerShape(15.dp))
-                                .shimmerEffect()
-                        )
-                    }
-                }
-            }
-        }
-    } else {
-        contentAfterLoading()
-    }
-}
-
-fun Modifier.shimmerEffect(): Modifier = composed {
-    var size by remember {
-        mutableStateOf(IntSize.Zero)
-    }
-    val transition = rememberInfiniteTransition()
-    val startOffsetX by transition.animateFloat(
-        initialValue = -2 * size.width.toFloat(),
-        targetValue = 2 * size.width.toFloat(),
-        animationSpec = infiniteRepeatable(
-            animation = tween(1000)
-        ), label = ""
-    )
-
-    background(
-        brush = Brush.linearGradient(
-            colors = listOf(
-                Color(0xFFB8B5B5),
-                Color(0xFF8F8B8B),
-                Color(0xFFB8B5B5),
-            ),
-            start = Offset(startOffsetX, 0f),
-            end = Offset(startOffsetX + size.width.toFloat(), size.height.toFloat())
-        )
-    )
-        .onGloballyPositioned {
-            size = it.size
-        }
 }

@@ -1,6 +1,5 @@
 package com.whis.ui.screen.workoutadd.ui
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Image
@@ -27,12 +26,9 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -40,8 +36,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.whis.Network.ValidationState
 import com.whis.R
 import com.whis.ui.customComposables.CustomButton
 import com.whis.ui.customComposables.CustomDialog
@@ -49,9 +47,9 @@ import com.whis.ui.customComposables.CustomTextField
 import com.whis.ui.customComposables.GifImage
 import com.whis.model.ExerciseListBean
 import com.whis.ui.customComposables.CustomText
-import com.whis.ui.customComposables.MainLayout
+import com.whis.ui.customComposables.LoadingDialog
+import com.whis.ui.customComposables.MyScaffold
 import com.whis.ui.screen.SharedViewModel
-import com.whis.ui.screen.workoutadd.viewmodel.ValidationState
 import com.whis.ui.screen.workoutadd.viewmodel.WorkoutAddViewModel
 import com.whis.ui.theme.Blue
 import com.whis.ui.theme.Green
@@ -67,9 +65,9 @@ import timber.log.Timber
 
 @Composable
 fun WorkoutEditScreen(
-    viewModel: WorkoutAddViewModel,
-    navHostController: NavHostController,
     modifier: Modifier = Modifier,
+    workoutAddViewModel: WorkoutAddViewModel = hiltViewModel(),
+    navHostController: NavHostController,
     sharedViewModel: SharedViewModel,
 ) {
     val context = LocalContext.current
@@ -77,21 +75,25 @@ fun WorkoutEditScreen(
     val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(key1 = Unit) {
-        viewModel.setWorkout(sharedViewModel.selectedWorkout)
+        workoutAddViewModel.setWorkout(sharedViewModel.selectedWorkout)
 
-        viewModel.apiState.collect { api_state ->
+        workoutAddViewModel.apiState.collect { api_state ->
             when (api_state) {
                 is ValidationState.Loading -> {
-
+                    if (api_state.isLoading) {
+                        workoutAddViewModel.setShowLoading(true)
+                    } else {
+                        workoutAddViewModel.setShowLoading(false)
+                    }
                 }
 
                 is ValidationState.Error -> {
                     coroutineScope.launch {
-                                        snackBarHostState.showSnackbar(
-                                            message = "Please fill all the fields",
-                                            duration = SnackbarDuration.Short
-                                        )
-                                    }
+                        snackBarHostState.showSnackbar(
+                            message = api_state.errorMsg,
+                            duration = SnackbarDuration.Short
+                        )
+                    }
                 }
 
                 is ValidationState.Ideal -> {
@@ -99,282 +101,291 @@ fun WorkoutEditScreen(
                 }
 
                 is ValidationState.Success -> {
-                    Timber.e("get")
                     Toast.makeText(
                         context,
-                        (api_state).msg,
+                        api_state.data as String,
                         Toast.LENGTH_SHORT
                     ).show()
-                    navHostController.navigateUp()
+                    //navHostController.getNavResultCallback<Unit>()?.invoke(Unit)
+                    if(api_state.tag.equals("add_workout")||api_state.tag.equals("remove_workout")){
+                        sharedViewModel.setRefresh(true)
+                        navHostController.navigateUp()
+                    }
                 }
             }
         }
     }
-    val workout by viewModel.selectedWorkout.collectAsStateWithLifecycle()
+    val workout by workoutAddViewModel.selectedWorkout.collectAsStateWithLifecycle()
 
     val state = rememberReorderableLazyListState(onMove = { from, to ->
-        viewModel.swapExercises(from.index, to.index)
+        workoutAddViewModel.swapExercises(from.index, to.index)
     })
 
-    val title by viewModel.titleInputFlow.collectAsStateWithLifecycle()
-    val totalTime by viewModel.totalTimeInputFlow.collectAsStateWithLifecycle()
-    val userTime by viewModel.userTimeInputFlow.collectAsStateWithLifecycle()
-    val heartrateMax by viewModel.heartrateMaxInputFlow.collectAsStateWithLifecycle()
-    val heartrateMin by viewModel.heartrateMinInputFlow.collectAsStateWithLifecycle()
-    val stress by viewModel.stressInputFlow.collectAsStateWithLifecycle()
-    val spo2 by viewModel.spo2InputFlow.collectAsStateWithLifecycle()
-    val calorie by viewModel.calorieInputFlow.collectAsStateWithLifecycle()
-    val musicUrl by viewModel.musicurlInputFlow.collectAsStateWithLifecycle()
-    val imageUrl by viewModel.imageurlInputFlow.collectAsStateWithLifecycle()
-    val search by viewModel.searchInputFlow.collectAsStateWithLifecycle()
-    val showRemoveWorkout by viewModel.showRemoveWorkout.collectAsStateWithLifecycle()
-    val showAddExercise by viewModel.showAddExercise.collectAsStateWithLifecycle()
-    val showExerciseMove by viewModel.showExerciseMove.collectAsStateWithLifecycle()
-    val exersisesSearch by viewModel.exercisesSearch.collectAsStateWithLifecycle()
-    val workoutExercises by viewModel.workoutExercises.collectAsStateWithLifecycle()
+    val showLoading by workoutAddViewModel.showLoading.collectAsStateWithLifecycle()
+    val title by workoutAddViewModel.titleInputFlow.collectAsStateWithLifecycle()
+    val totalTime by workoutAddViewModel.totalTimeInputFlow.collectAsStateWithLifecycle()
+    val userTime by workoutAddViewModel.userTimeInputFlow.collectAsStateWithLifecycle()
+    val heartrateMax by workoutAddViewModel.heartrateMaxInputFlow.collectAsStateWithLifecycle()
+    val heartrateMin by workoutAddViewModel.heartrateMinInputFlow.collectAsStateWithLifecycle()
+    val stress by workoutAddViewModel.stressInputFlow.collectAsStateWithLifecycle()
+    val spo2 by workoutAddViewModel.spo2InputFlow.collectAsStateWithLifecycle()
+    val calorie by workoutAddViewModel.calorieInputFlow.collectAsStateWithLifecycle()
+    val musicUrl by workoutAddViewModel.musicurlInputFlow.collectAsStateWithLifecycle()
+    val imageUrl by workoutAddViewModel.imageurlInputFlow.collectAsStateWithLifecycle()
+    val search by workoutAddViewModel.searchInputFlow.collectAsStateWithLifecycle()
+    val showRemoveWorkout by workoutAddViewModel.showRemoveWorkout.collectAsStateWithLifecycle()
+    val showAddExercise by workoutAddViewModel.showAddExercise.collectAsStateWithLifecycle()
+    val showExerciseMove by workoutAddViewModel.showExerciseMove.collectAsStateWithLifecycle()
+    val exersisesSearch by workoutAddViewModel.exercisesSearch.collectAsStateWithLifecycle()
+    val workoutExercises by workoutAddViewModel.workoutExercises.collectAsStateWithLifecycle()
 
 
-    MainLayout(title = if (checkString(workout.title, isempty = true).isEmpty()) {
+    MyScaffold(title = if (checkString(workout.title, isempty = true).isEmpty()) {
         "Add Workout"
     } else {
         "Edit Workout"
-    }, navHostController = navHostController, actions = {
-        if (checkString(workout.title, isempty = true).isNotEmpty()) {
-            IconButton(onClick = {
-                viewModel.setshowRemoveWorkout(true)
-            }) {
-                Icon(
-                    Icons.Filled.Delete, "remove_icon", tint = White
-                )
+    }, navHostController = navHostController,
+        snackBarState = snackBarHostState,
+        actions = {
+            if (checkString(workout.title, isempty = true).isNotEmpty()) {
+                IconButton(onClick = {
+                    workoutAddViewModel.setshowRemoveWorkout(true)
+                }) {
+                    Icon(
+                        Icons.Filled.Delete, "remove_icon", tint = White
+                    )
+                }
             }
-        }
-    }, content = { snackBarHostState ->
+        }, content = { _ ->
+            if (showLoading) {
+                LoadingDialog()
+            }
 
-        if (showRemoveWorkout) {
-            CustomDialog(onDismissRequest = {
-                viewModel.setshowRemoveWorkout(false)
-            }) {
-                CustomText(
-                    value = "Remove ${workout.title}",
-                    isheading = true,
-                    txtsize = 18.sp,
-                    modifier = modifier.align(Alignment.Start)
+            if (showRemoveWorkout) {
+                CustomDialog(onDismissRequest = {
+                    workoutAddViewModel.setshowRemoveWorkout(false)
+                }) {
+                    CustomText(
+                        value = "Remove ${workout.title}",
+                        isheading = true,
+                        txtsize = 18.sp,
+                        modifier = modifier.align(Alignment.Start)
+                    )
+                    CustomText(
+                        value = "Do you want to remove this workout ?",
+                        modifier = modifier.align(Alignment.Start)
+                    )
+                    Row {
+                        CustomButton(
+                            value = "Cancel", bgcolor = Red, onClick = {
+                                workoutAddViewModel.setshowRemoveWorkout(false)
+                            }, modifier = modifier
+                                .fillMaxWidth()
+                                .weight(1.0f)
+                        )
+                        Spacer(modifier = Modifier.weight(0.1f))
+                        CustomButton(
+                            value = "Remove", bgcolor = Green, onClick = {
+                                val data = HashMap<String?, Any?>()
+                                data.put("id", workout.id)
+                                workoutAddViewModel.removeWorkout(data)
+                            }, modifier = modifier
+                                .fillMaxWidth()
+                                .weight(1.0f)
+                        )
+                    }
+
+                }
+            }
+
+            if (showAddExercise) {
+                CustomDialog(
+                    onDismissRequest = {
+                        workoutAddViewModel.setshowAddExercise(false)
+                    }, isSmall = false
+                ) {
+                    CustomTextField(title = "Search", value = search, onValueChange = {
+                        workoutAddViewModel.setSearch(it)
+                    }, starticon = {
+                        IconButton(onClick = { }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Search,
+                                contentDescription = "Search",
+                            )
+                        }
+                    }, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                    )
+                    LazyColumn(
+                        modifier = modifier.height(450.dp)
+                    ) {
+                        items(exersisesSearch, key = { item -> "search_${item!!.id!!}" }) { item ->
+                            ExerciseSearchItem(
+                                item = item!!, workoutAddViewModel, modifier = modifier
+                            )
+                        }
+                    }
+                    CustomButton(
+                        value = "Save", onClick = {
+                            workoutAddViewModel.setshowAddExercise(false)
+                        }, modifier = modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            if (showExerciseMove) {
+                CustomDialog(
+                    onDismissRequest = {
+                        workoutAddViewModel.setShowExerciseMove(false)
+                    }, isSmall = false
+                ) {
+                    CustomText(
+                        value = "Exercises",
+                        isheading = true,
+                        txtsize = 18.sp,
+                        modifier = modifier.align(Alignment.Start)
+                    )
+                    LazyColumn(
+                        state = state.listState,
+                        modifier = modifier
+                            .height(500.dp)
+                            .reorderable(state)
+                            .detectReorderAfterLongPress(state)
+                    ) {
+                        items(workoutExercises, key = { item -> "move ${item.id!!}" }) { item ->
+                            ReorderableItem(state, key = item.id!!) { isDragging ->
+                                ExerciseMoveItem(item = item, isDragging, modifier = modifier)
+                            }
+                        }
+                    }
+                    CustomButton(
+                        value = "Save", onClick = {
+                            workoutAddViewModel.setShowExerciseMove(false)
+                        }, modifier = modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            Column(
+                modifier = modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(10.dp)
+            ) {
+
+                CustomTextField(
+                    title = "Title", value = title, onValueChange = {
+                        workoutAddViewModel.setTitle(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
                 )
-                CustomText(
-                    value = "Do you want to remove this workout ?",
-                    modifier = modifier.align(Alignment.Start)
+                CustomTextField(
+                    title = "Total Time", value = totalTime, onValueChange = {
+                        workoutAddViewModel.setTotalTime(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
                 )
+                CustomTextField(
+                    title = "User Time", value = userTime, onValueChange = {
+                        workoutAddViewModel.setUserTime(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                )
+                CustomTextField(
+                    title = "Heartrate Max.", value = heartrateMax, onValueChange = {
+                        workoutAddViewModel.setHeartrateMax(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                )
+                CustomTextField(
+                    title = "Heartrate Min.", value = heartrateMin, onValueChange = {
+                        workoutAddViewModel.setHeartrateMin(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                )
+                CustomTextField(
+                    title = "Stress", value = stress, onValueChange = {
+                        workoutAddViewModel.setStress(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                )
+                CustomTextField(
+                    title = "Spo2", value = spo2, onValueChange = {
+                        workoutAddViewModel.setSpo2(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                )
+                CustomTextField(
+                    title = "Calorie", value = calorie, onValueChange = {
+                        workoutAddViewModel.setCalorie(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                )
+                CustomTextField(
+                    title = "Music Url", value = musicUrl, onValueChange = {
+                        workoutAddViewModel.setMusicUrl(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                )
+                CustomTextField(
+                    title = "Image Url", value = imageUrl, isLast = true, onValueChange = {
+                        workoutAddViewModel.setImageUrl(it)
+                    }, isvalidate = true, modifier = modifier
+                        .fillMaxWidth()
+                        .padding(top = 5.dp)
+                )
+                GifImage(
+                    imageUrl = imageUrl,
+                    modifier = modifier
+                        .padding(top = 5.dp)
+                        .height(100.dp)
+                        .width(200.dp)
+                )
+
+
+                CustomButton(
+                    value = if (checkString(workout.title, isempty = true).isEmpty()) {
+                        "Add Workout"
+                    } else {
+                        "Edit Workout"
+                    }, onClick = {
+                        workoutAddViewModel.validateForm()
+                    }, modifier = modifier.fillMaxWidth()
+                )
+
                 Row {
                     CustomButton(
-                        value = "Cancel", bgcolor = Red, onClick = {
-                            viewModel.setshowRemoveWorkout(false)
+                        value = "View Exercises", bgcolor = Blue, onClick = {
+                            workoutAddViewModel.setShowExerciseMove(true)
                         }, modifier = modifier
                             .fillMaxWidth()
                             .weight(1.0f)
                     )
                     Spacer(modifier = Modifier.weight(0.1f))
                     CustomButton(
-                        value = "Remove", bgcolor = Green, onClick = {
-                            val data = HashMap<String?, Any?>()
-                            data.put("id", workout.id)
-                            viewModel.removeWorkout(data)
+                        value = "Add Exercise", bgcolor = Green, onClick = {
+                            workoutAddViewModel.setSearch("")
+                            workoutAddViewModel.setshowAddExercise(true)
                         }, modifier = modifier
                             .fillMaxWidth()
                             .weight(1.0f)
                     )
                 }
-
+                /*if (apiSuccess!!.isNotEmpty()) {
+                    //Toast.makeText(context, apiSuccess!!, Toast.LENGTH_SHORT).show()
+                    navHostController.navigateUp()
+                }*/
             }
-        }
-
-        if (showAddExercise) {
-            CustomDialog(
-                onDismissRequest = {
-                    viewModel.setshowAddExercise(false)
-                }, isSmall = false
-            ) {
-                CustomTextField(title = "Search", value = search, onValueChange = {
-                    viewModel.setSearch(it)
-                }, starticon = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = "Search",
-                        )
-                    }
-                }, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-                )
-                LazyColumn(
-                    modifier = modifier.height(450.dp)
-                ) {
-                    items(exersisesSearch, key = { item -> "search_${item!!.id!!}" }) { item ->
-                        ExerciseSearchItem(
-                            item = item!!, viewModel, modifier = modifier
-                        )
-                    }
-                }
-                CustomButton(
-                    value = "Save", onClick = {
-                        viewModel.setshowAddExercise(false)
-                    }, modifier = modifier.fillMaxWidth()
-                )
-            }
-        }
-
-        if (showExerciseMove) {
-            CustomDialog(
-                onDismissRequest = {
-                    viewModel.setShowExerciseMove(false)
-                }, isSmall = false
-            ) {
-                CustomText(
-                    value = "Exercises",
-                    isheading = true,
-                    txtsize = 18.sp,
-                    modifier = modifier.align(Alignment.Start)
-                )
-                LazyColumn(
-                    state = state.listState,
-                    modifier = modifier
-                        .height(500.dp)
-                        .reorderable(state)
-                        .detectReorderAfterLongPress(state)
-                ) {
-                    items(workoutExercises, key = { item -> "move ${item.id!!}" }) { item ->
-                        ReorderableItem(state, key = item.id!!) { isDragging ->
-                            ExerciseMoveItem(item = item, isDragging, modifier = modifier)
-                        }
-                    }
-                }
-                CustomButton(
-                    value = "Save", onClick = {
-                        viewModel.setShowExerciseMove(false)
-                    }, modifier = modifier.fillMaxWidth()
-                )
-            }
-        }
-
-        Column(
-            modifier = modifier
-                .verticalScroll(rememberScrollState())
-                .padding(10.dp)
-        ) {
-
-            CustomTextField(
-                title = "Title", value = title, onValueChange = {
-                    viewModel.setTitle(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            CustomTextField(
-                title = "Total Time", value = totalTime, onValueChange = {
-                    viewModel.setTotalTime(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            CustomTextField(
-                title = "User Time", value = userTime, onValueChange = {
-                    viewModel.setUserTime(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            CustomTextField(
-                title = "Heartrate Max.", value = heartrateMax, onValueChange = {
-                    viewModel.setHeartrateMax(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            CustomTextField(
-                title = "Heartrate Min.", value = heartrateMin, onValueChange = {
-                    viewModel.setHeartrateMin(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            CustomTextField(
-                title = "Stress", value = stress, onValueChange = {
-                    viewModel.setStress(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            CustomTextField(
-                title = "Spo2", value = spo2, onValueChange = {
-                    viewModel.setSpo2(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            CustomTextField(
-                title = "Calorie", value = calorie, onValueChange = {
-                    viewModel.setCalorie(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            CustomTextField(
-                title = "Music Url", value = musicUrl, onValueChange = {
-                    viewModel.setMusicUrl(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            CustomTextField(
-                title = "Image Url", value = imageUrl, isLast = true, onValueChange = {
-                    viewModel.setImageUrl(it)
-                }, isvalidate = true, modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp)
-            )
-            GifImage(
-                imageUrl = imageUrl,
-                modifier = modifier
-                    .padding(top = 5.dp)
-                    .height(100.dp)
-                    .width(200.dp)
-            )
-
-
-            CustomButton(
-                value = if (checkString(workout.title, isempty = true).isEmpty()) {
-                    "Add Workout"
-                } else {
-                    "Edit Workout"
-                }, onClick = {
-                    viewModel.validateForm()
-                }, modifier = modifier.fillMaxWidth()
-            )
-
-            Row {
-                CustomButton(
-                    value = "View Exercises", bgcolor = Blue, onClick = {
-                        viewModel.setShowExerciseMove(true)
-                    }, modifier = modifier
-                        .fillMaxWidth()
-                        .weight(1.0f)
-                )
-                Spacer(modifier = Modifier.weight(0.1f))
-                CustomButton(
-                    value = "Add Exercise", bgcolor = Green, onClick = {
-                        viewModel.setSearch("")
-                        viewModel.setshowAddExercise(true)
-                    }, modifier = modifier
-                        .fillMaxWidth()
-                        .weight(1.0f)
-                )
-            }
-            /*if (apiSuccess!!.isNotEmpty()) {
-                //Toast.makeText(context, apiSuccess!!, Toast.LENGTH_SHORT).show()
-                navHostController.navigateUp()
-            }*/
-        }
-    })
+        })
 
 }
 
