@@ -380,7 +380,7 @@ fun WorkoutEditScreen(
 
 @Composable
 fun ExerciseMoveItem(item: ExerciseListBean.Data, isDragging: Boolean, modifier: Modifier) {
-    val elevation = animateDpAsState(if (isDragging) 16.dp else 0.dp, label = "exercise_move")
+    val elevation = animateDpAsState(if (isDragging) 16.dp else 0.dp, label = "${item.name}")
     Row(verticalAlignment = Alignment.CenterVertically) {
         Image(
             painter = painterResource(id = R.drawable.rearrange_icon),
@@ -388,7 +388,7 @@ fun ExerciseMoveItem(item: ExerciseListBean.Data, isDragging: Boolean, modifier:
             modifier = modifier.height(20.dp)
         )
         Card(
-            modifier = modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(8.dp)
                 .shadow(elevation.value),

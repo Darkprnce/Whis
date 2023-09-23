@@ -23,7 +23,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
-import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -42,8 +41,8 @@ class WorkoutAddViewModel @Inject constructor(
     //var workoutExercises = mutableStateListOf<ExerciseListBean.Data>()
 //    private val _workoutExercisesFlow = MutableStateFlow<List<ExerciseListBean.Data>>(listOf())
 //    val workoutExercises = _workoutExercisesFlow.asStateFlow()
-    private val _workoutExercisesFlow = MutableStateFlow<MutableList<ExerciseListBean.Data>>(
-        mutableListOf()
+    private val _workoutExercisesFlow = MutableStateFlow<SnapshotStateList<ExerciseListBean.Data>>(
+        mutableStateListOf()
     )
     val workoutExercises = _workoutExercisesFlow.asStateFlow()
 
@@ -187,6 +186,7 @@ class WorkoutAddViewModel @Inject constructor(
                 exerciseList = bean.data!!
                 _exercisesSearchFlow.value = bean.data!!.toMutableStateList()
                 if (_selectedWorkout.value.exercises_id != null) {
+                    _workoutExercisesFlow.value = mutableStateListOf()
                     for (item in _selectedWorkout.value.exercises_id!!) {
                         _workoutExercisesFlow.value.add(exerciseList.find { it!!.id == item!!.id }!!)
                         exerciseList.find { it!!.id == item!!.id }!!.selected = true
@@ -196,14 +196,18 @@ class WorkoutAddViewModel @Inject constructor(
             } else {
                 exerciseList = arrayListOf()
                 _exercisesSearchFlow.value = mutableStateListOf()
-                _workoutExercisesFlow.value = arrayListOf()
+                _workoutExercisesFlow.value = mutableStateListOf()
             }
         }
     }
 
     fun swapExercises(from: Int, to: Int) {
-        _workoutExercisesFlow.value = _workoutExercisesFlow.value.apply {
-            add(to, removeAt(from))
+//        _workoutExercisesFlow.value = _workoutExercisesFlow.value.apply {
+//            add(to, removeAt(from))
+//        }
+        _workoutExercisesFlow.update {
+            it.add(to, it.removeAt(from))
+            it
         }
     }
 
