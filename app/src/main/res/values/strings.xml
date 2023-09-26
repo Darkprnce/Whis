@@ -1,3 +1,29 @@
 <resources>
     <string name="app_name">Whis</string>
+    <string name="save_btn">Save</string>
+    <string name="no_exercises">No Exercises</string>
+    <string name="title">Title</string>
+    <string name="total_time">Total Time</string>
+    <string name="user_time">User Time</string>
+    <string name="heartrate_max">Heartrate Max.</string>
+    <string name="heartrate_min">Heartrate Min.</string>
+    <string name="stress">Stress</string>
+    <string name="spo2">Spo2</string>
+    <string name="calorie">Calorie</string>
+    <string name="music_url">Music Url</string>
+    <string name="image_url">Image Url</string>
+    <string name="add_workout">Add Workout</string>
+    <string name="edit_workout">Edit Workout</string>
+    <string name="view_exercises">View Exercises</string>
+    <string name="add_exercise">Add Exercise</string>
+    <string name="delete">Delete</string>
+    <string name="exercises">Exercises</string>
+    <string name="search">Search</string>
+    <string name="remove_btn">Remove</string>
+    <string name="cancel_btn">Cancel</string>
+    <string name="do_you_want_to_remove_this_workout">Do you want to remove this workout ?</string>
+    <string name="remove_icon">remove_icon</string>
+    <string name="no_workouts">No Workouts</string>
+    <string name="list">list</string>
+    <string name="add">Add</string>
 </resources>

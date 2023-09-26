@@ -22,12 +22,12 @@ inline fun <reified ValueT> com.android.build.api.dsl.VariantDimension.buildConf
 
 android {
     namespace = "com.whis"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.whis"
         minSdk = 24
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -111,6 +111,9 @@ dependencies {
     //Coil
     implementation("io.coil-kt:coil-compose:2.3.0")
     implementation("io.coil-kt:coil-gif:2.0.0-rc02")
+
+    //Landscapist (Image Loading)
+    implementation ("com.github.skydoves:landscapist-glide:2.2.9")
 
     //Room
     implementation("androidx.room:room-runtime:2.5.2")

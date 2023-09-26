@@ -14,10 +14,13 @@ import com.whis.utils.SOME_ERROR_OCCURED
 import com.whis.utils.checkString
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 @HiltViewModel
@@ -31,20 +34,17 @@ class WorkoutAddViewModel @Inject constructor(
 
     private var exerciseList: List<ExerciseListBean.Data?> = arrayListOf()
 
-    //var exercisesSearch = mutableStateOf<List<ExerciseListBean.Data?>>(listOf())
-    private val _exercisesSearchFlow = MutableStateFlow<SnapshotStateList<ExerciseListBean.Data?>>(mutableStateListOf())
+    private val _exercisesSearchFlow =
+        MutableStateFlow<SnapshotStateList<ExerciseListBean.Data?>>(mutableStateListOf())
     val exercisesSearch = _exercisesSearchFlow.asStateFlow()
 
-    //var workoutExercises = mutableStateListOf<ExerciseListBean.Data>()
-//    private val _workoutExercisesFlow = MutableStateFlow<List<ExerciseListBean.Data>>(listOf())
-//    val workoutExercises = _workoutExercisesFlow.asStateFlow()
     private val _workoutExercisesFlow = MutableStateFlow<SnapshotStateList<ExerciseListBean.Data>>(
         mutableStateListOf()
     )
     val workoutExercises = _workoutExercisesFlow.asStateFlow()
 
-    private val _apiState = MutableStateFlow<ValidationState>(ValidationState.Ideal)
-    val apiState = _apiState.asStateFlow()
+    private val _apiState = MutableSharedFlow<ValidationState>()
+    val apiState = _apiState.asSharedFlow()
 
     //var selectedWorkout = mutableStateOf(WorkoutListBean.Data())
 
@@ -54,13 +54,22 @@ class WorkoutAddViewModel @Inject constructor(
     private val _titleInputFlow = MutableStateFlow("")
     val titleInputFlow = _titleInputFlow.asStateFlow()
 
+    private val _titleInputErrorFlow = MutableStateFlow(false)
+    val titleInputErrorFlow = _titleInputErrorFlow.asStateFlow()
+
     private val _totalTimeInputFlow = MutableStateFlow("")
 
     //val totalTimeInputFlow: StateFlow<String> get() = _totalTimeInputFlow
     val totalTimeInputFlow = _totalTimeInputFlow.asStateFlow()
 
+    private val _totalTimeInputErrorFlow = MutableStateFlow(false)
+    val totalTimeInputErrorFlow = _totalTimeInputErrorFlow.asStateFlow()
+
     private val _userTimeInputFlow = MutableStateFlow("")
     val userTimeInputFlow = _userTimeInputFlow.asStateFlow()
+
+    private val _userTimeInputErrorFlow = MutableStateFlow(false)
+    val userTimeInputErrorFlow = _userTimeInputErrorFlow.asStateFlow()
 
     private val _heartrateMaxInputFlow = MutableStateFlow("")
     val heartrateMaxInputFlow = _heartrateMaxInputFlow.asStateFlow()
@@ -83,6 +92,9 @@ class WorkoutAddViewModel @Inject constructor(
     private val _imageurlInputFlow = MutableStateFlow("")
     val imageurlInputFlow = _imageurlInputFlow.asStateFlow()
 
+    private val _imageurlInputErrorFlow = MutableStateFlow(false)
+    val imageurlInputErrorFlow = _imageurlInputErrorFlow.asStateFlow()
+
     private val _searchInputFlow = MutableStateFlow("")
     val searchInputFlow = _searchInputFlow.asStateFlow()
 
@@ -94,21 +106,31 @@ class WorkoutAddViewModel @Inject constructor(
 
     private val _showExerciseMoveFlow = MutableStateFlow(false)
     val showExerciseMove = _showExerciseMoveFlow.asStateFlow()
-
+    private var _isvalidation = false
 
     fun setShowLoading(value: Boolean) {
         _showLoadingFlow.value = value
     }
+
     fun setTitle(value: String) {
         _titleInputFlow.value = value
+        if (_isvalidation) {
+            _titleInputErrorFlow.value = value.isEmpty()
+        }
     }
 
     fun setTotalTime(value: String) {
         _totalTimeInputFlow.value = value
+        if (_isvalidation) {
+            _totalTimeInputErrorFlow.value = value.isEmpty()
+        }
     }
 
     fun setUserTime(value: String) {
         _userTimeInputFlow.value = value
+        if (_isvalidation) {
+            _userTimeInputErrorFlow.value = value.isEmpty()
+        }
     }
 
     fun setHeartrateMax(value: String) {
@@ -137,6 +159,9 @@ class WorkoutAddViewModel @Inject constructor(
 
     fun setImageUrl(value: String) {
         _imageurlInputFlow.value = value
+        if (_isvalidation) {
+            _imageurlInputErrorFlow.value = value.isEmpty()
+        }
     }
 
     fun setshowRemoveWorkout(value: Boolean) {
@@ -152,36 +177,67 @@ class WorkoutAddViewModel @Inject constructor(
     }
 
     fun setWorkout(workout: WorkoutListBean.Data?) {
-        _apiState.value = ValidationState.Ideal
-        if (workout != null) {
-            _selectedWorkout.value = workout
-            setData()
-        } else {
-            _selectedWorkout.value = WorkoutListBean.Data()
+
+        viewModelScope.launch(Dispatchers.IO) {
+            _apiState.emit(ValidationState.Ideal)
+            if (workout != null) {
+                _selectedWorkout.value = workout
+                setData()
+            } else {
+                _selectedWorkout.value = WorkoutListBean.Data()
+            }
+            getExercises()
         }
-        getExercises()
     }
 
     private fun setData() {
-        setTitle(checkString(_selectedWorkout.value.title, isempty = true))
-        setTotalTime(checkString(_selectedWorkout.value.total_time, isempty = true))
-        setUserTime(checkString(_selectedWorkout.value.user_time, isempty = true))
-        setHeartrateMax(checkString(_selectedWorkout.value.heartrate_max, isempty = true))
-        setHeartrateMin(checkString(_selectedWorkout.value.heartrate_min, isempty = true))
-        setStress(checkString(_selectedWorkout.value.stress, isempty = true))
-        setSpo2(checkString(_selectedWorkout.value.spo2, isempty = true))
-        setCalorie(checkString(_selectedWorkout.value.calorie, isempty = true))
-        setMusicUrl(checkString(_selectedWorkout.value.music_url, isempty = true))
-        setImageUrl(checkString(_selectedWorkout.value.image_url, isempty = true))
+        if (checkString(_selectedWorkout.value.title, isempty = true).isNotEmpty()) {
+            setTitle(checkString(_selectedWorkout.value.title, isempty = true))
+        }
+
+        if (checkString(_selectedWorkout.value.total_time, isempty = true).isNotEmpty()) {
+            setTotalTime(checkString(_selectedWorkout.value.total_time, isempty = true))
+        }
+
+        if (checkString(_selectedWorkout.value.user_time, isempty = true).isNotEmpty()) {
+            setUserTime(checkString(_selectedWorkout.value.user_time, isempty = true))
+        }
+
+        if (checkString(_selectedWorkout.value.heartrate_max, isempty = true).isNotEmpty()) {
+            setHeartrateMax(checkString(_selectedWorkout.value.heartrate_max, isempty = true))
+        }
+
+        if (checkString(_selectedWorkout.value.heartrate_min, isempty = true).isNotEmpty()) {
+            setHeartrateMin(checkString(_selectedWorkout.value.heartrate_min, isempty = true))
+        }
+
+        if (checkString(_selectedWorkout.value.stress, isempty = true).isNotEmpty()) {
+            setStress(checkString(_selectedWorkout.value.stress, isempty = true))
+        }
+
+        if (checkString(_selectedWorkout.value.spo2, isempty = true).isNotEmpty()) {
+            setSpo2(checkString(_selectedWorkout.value.spo2, isempty = true))
+        }
+
+        if (checkString(_selectedWorkout.value.calorie, isempty = true).isNotEmpty()) {
+            setCalorie(checkString(_selectedWorkout.value.calorie, isempty = true))
+        }
+
+        if (checkString(_selectedWorkout.value.music_url, isempty = true).isNotEmpty()) {
+            setMusicUrl(checkString(_selectedWorkout.value.music_url, isempty = true))
+        }
+
+        if (checkString(_selectedWorkout.value.image_url, isempty = true).isNotEmpty()) {
+            setImageUrl(checkString(_selectedWorkout.value.image_url, isempty = true))
+        }
     }
 
 
     private fun getExercises() {
         val tag = "exercise_list"
-        _apiState.value = ValidationState.Loading(tag,true)
-        val data = HashMap<String?, Any?>()
-        data["username"] = "darkprnce"
         viewModelScope.launch(Dispatchers.IO) {
+            _apiState.emit(ValidationState.Loading(tag, true))
+            val data = HashMap<String?, Any?>()
             val bean = exerciseListRepository.getExerciseList(data)
             if (bean != null) {
                 exerciseList = bean.data!!
@@ -194,20 +250,17 @@ class WorkoutAddViewModel @Inject constructor(
                         _exercisesSearchFlow.value.find { it!!.id == item!!.id }!!.selected = true
                     }
                 }
-                _apiState.value = ValidationState.Loading(tag,false)
+                _apiState.emit(ValidationState.Loading(tag, false))
             } else {
                 exerciseList = arrayListOf()
                 _exercisesSearchFlow.value = mutableStateListOf()
                 _workoutExercisesFlow.value = mutableStateListOf()
-                _apiState.value = ValidationState.Loading(tag,false)
+                _apiState.emit(ValidationState.Loading(tag, false))
             }
         }
     }
 
     fun swapExercises(from: Int, to: Int) {
-//        _workoutExercisesFlow.value = _workoutExercisesFlow.value.apply {
-//            add(to, removeAt(from))
-//        }
         _workoutExercisesFlow.update {
             it.add(to, it.removeAt(from))
             it
@@ -231,26 +284,24 @@ class WorkoutAddViewModel @Inject constructor(
     }
 
     fun addExercise(item: ExerciseListBean.Data) {
-        //viewModelScope.launch(Dispatchers.Default) {
-            val find_item = _workoutExercisesFlow.value.find { it.id == item.id }
-            if (find_item != null) {
-                _workoutExercisesFlow.value.remove(find_item)
-                _exercisesSearchFlow.update {
-                    val item_v = it.find { it!!.id == item.id }!!
-                    it[it.indexOf(item_v)] = it[it.indexOf(item_v)]!!.copy(selected = false)
-                    it
-                }
-                exerciseList.find { it!!.id == item.id }!!.selected = false
-            } else {
-                _workoutExercisesFlow.value.add(item)
-                _exercisesSearchFlow.update {
-                    val item_v = it.find { it!!.id == item.id }!!
-                    it[it.indexOf(item_v)] = it[it.indexOf(item_v)]!!.copy(selected = true)
-                    it
-                }
-                exerciseList.find { it!!.id == item.id }!!.selected = true
+        val find_item = _workoutExercisesFlow.value.find { it.id == item.id }
+        if (find_item != null) {
+            _workoutExercisesFlow.value.remove(find_item)
+            _exercisesSearchFlow.update {
+                val item_v = it.find { it!!.id == item.id }!!
+                it[it.indexOf(item_v)] = it[it.indexOf(item_v)]!!.copy(selected = false)
+                it
             }
-        //}
+            exerciseList.find { it!!.id == item.id }!!.selected = false
+        } else {
+            _workoutExercisesFlow.value.add(item)
+            _exercisesSearchFlow.update {
+                val item_v = it.find { it!!.id == item.id }!!
+                it[it.indexOf(item_v)] = it[it.indexOf(item_v)]!!.copy(selected = true)
+                it
+            }
+            exerciseList.find { it!!.id == item.id }!!.selected = true
+        }
     }
 
     fun exerciseExist(item: ExerciseListBean.Data): Boolean {
@@ -260,58 +311,59 @@ class WorkoutAddViewModel @Inject constructor(
 
     fun addWorkout(data: HashMap<String?, Any?>) {
         val tag = "add_workout"
-        _apiState.value = ValidationState.Loading(tag,true)
-        data.put("username", "darkprnce")
-        for (item in data.values) {
-            if (item is String || item is Int || item is Double || item is Float) {
-                item.toString().trim()
-            }
-        }
         viewModelScope.launch(Dispatchers.IO) {
+            _apiState.emit(ValidationState.Loading(tag, true))
             val bean = workoutRepository.addWorkout(data)
             if (bean != null) {
-                _apiState.value = ValidationState.Loading(tag,false)
-                if (bean.status.equals("success",ignoreCase = true)) {
-                    _apiState.value = ValidationState.Success(tag, bean.msg!!)
+                _apiState.emit(ValidationState.Loading(tag, false))
+                if (bean.status.equals("success", ignoreCase = true)) {
+                    _apiState.emit(ValidationState.Success(tag, bean.msg!!))
                 } else {
-                    _apiState.value = ValidationState.Error(tag, bean.msg!!)
+                    _apiState.emit(ValidationState.Error(tag, bean.msg!!))
                 }
             } else {
-                _apiState.value = ValidationState.Loading(tag,false)
-                _apiState.value = ValidationState.Error(tag, SOME_ERROR_OCCURED)
+                _apiState.emit(ValidationState.Loading(tag, false))
+                _apiState.emit(ValidationState.Error(tag, SOME_ERROR_OCCURED))
             }
         }
     }
 
     fun removeWorkout(data: HashMap<String?, Any?>) {
         val tag = "remove_workout"
-        _apiState.value = ValidationState.Loading(tag,true)
-        data.put("username", "darkprnce")
-        for (item in data.values) {
-            if (item is String || item is Int || item is Double || item is Float) {
-                item.toString().trim()
-            }
-        }
         viewModelScope.launch(Dispatchers.IO) {
+            _apiState.emit(ValidationState.Loading(tag, true))
             val bean = workoutRepository.removeWorkout(data)
             if (bean != null) {
-                _apiState.value = ValidationState.Loading(tag,false)
-                if (bean.status.equals("success",ignoreCase = true)) {
-                    _apiState.value = ValidationState.Success(tag, bean.msg!!)
+                _apiState.emit(ValidationState.Loading(tag, false))
+                if (bean.status.equals("success", ignoreCase = true)) {
+                    _apiState.emit(ValidationState.Success(tag, bean.msg!!))
                 } else {
-                    _apiState.value = ValidationState.Error(tag, bean.msg!!)
+                    _apiState.emit(ValidationState.Error(tag, bean.msg!!))
                 }
             } else {
-                _apiState.value = ValidationState.Loading(tag,false)
-                _apiState.value = ValidationState.Error(tag, SOME_ERROR_OCCURED)
+                _apiState.emit(ValidationState.Loading(tag, false))
+                _apiState.emit(ValidationState.Error(tag, SOME_ERROR_OCCURED))
             }
         }
     }
 
     fun validateForm() {
-        if (_titleInputFlow.value.isEmpty() || _totalTimeInputFlow.value.isEmpty() || _userTimeInputFlow.value.isEmpty() || _imageurlInputFlow.value.isEmpty()) {
-            _apiState.value = ValidationState.Error("validation", "Please fill all the fields")
+        if (_titleInputFlow.value.isEmpty() ||
+            _totalTimeInputFlow.value.isEmpty() ||
+            _userTimeInputFlow.value.isEmpty() ||
+            _imageurlInputFlow.value.isEmpty()
+        ) {
+            _isvalidation = true
+            _titleInputErrorFlow.value = _titleInputFlow.value.isEmpty()
+            _totalTimeInputErrorFlow.value = _totalTimeInputFlow.value.isEmpty()
+            _userTimeInputErrorFlow.value = _userTimeInputFlow.value.isEmpty()
+            _imageurlInputErrorFlow.value = _imageurlInputFlow.value.isEmpty()
+
+            viewModelScope.launch(Dispatchers.Default) {
+                _apiState.emit(ValidationState.Error("validation", "Please fill all the fields"))
+            }
         } else {
+            _isvalidation = false
             val data = HashMap<String?, Any?>()
             data["id"] = _selectedWorkout.value.id
             data["title"] = _titleInputFlow.value

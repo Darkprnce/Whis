@@ -87,6 +87,7 @@ import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import coil.size.Size
 import com.whis.ui.theme.White
+import timber.log.Timber
 
 @Composable
 fun CustomText(
@@ -169,8 +170,11 @@ fun CustomTextField(
     isemail: Boolean = false,
     ismobile: Boolean = false,
     ispincode: Boolean = false,
+    isnumber: Boolean = false,
     iscapital: Boolean = false,
     isLast: Boolean = false,
+    iserror: Boolean = false,
+    supportingText: String = "",
     starticon: @Composable (() -> Unit)? = null,
     endicon: @Composable (() -> Unit)? = null,
 ) {
@@ -183,125 +187,10 @@ fun CustomTextField(
     var ispincodeValid by remember { mutableStateOf(true) }
     var isError by remember { mutableStateOf(false) }
 
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.Start
-    ) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = {
-                onValueChange(it)
-                if (isvalidate) {
-                    isvalid = !TextUtils.isEmpty(it)
-                }
-                if (isemail) {
-                    isemailValid = android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()
-                }
-                if (ismobile) {
-                    ismobileValid = it.length >= 10
-                }
-                if (ispincode) {
-                    ispincodeValid = it.length >= 6
-                }
-            },
-            enabled=isenabled,
-            leadingIcon = starticon,
-            trailingIcon = {
-                if (isError) {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Info,
-                            contentDescription = "Error",
-                            tint = Color.Red
-                        )
-                    }
-                } else {
-                    endicon
-                }
-            },
-            textStyle = MaterialTheme.typography.bodyMedium,
-            modifier = modifier
-                .fillMaxWidth()
-//            .border(
-//                width = 1.dp,
-//                color = if (isError) Color.Red else Color.Gray, // Customize error color
-//                shape = RoundedCornerShape(4.dp)
-//            )
-                .padding(1.dp)
-                .focusRequester(
-                    focusRequester =
-                    (if (isFocused) {
-                        rememberUpdatedState(isFocused)
-                    } else {
-                        FocusRequester()
-                    }) as FocusRequester
-                ).onPreviewKeyEvent {
-                    if (it.key == Key.Tab && it.nativeKeyEvent.action == ACTION_DOWN){
-                        if (isLast) {
-                            keyboardController!!.hide()
-                            focusManager.clearFocus()
-                        } else {
-                            focusManager.moveFocus(FocusDirection.Down)
-                        }
-                        true
-                    } else {
-                        false
-                    }
-                },
-            label = {
-                CustomText(
-                    title, color =
-                    if (isError) {
-                        Color.Red
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
-                )
-            },
-            isError =
-            if (isvalidate) {
-                !isvalid
-            } else if (isemail) {
-                !isemailValid
-            } else if (ismobile) {
-                !ismobileValid
-            } else if (ispincode) {
-                !ispincodeValid
-            } else {
-                false
-            },
-        keyboardActions = KeyboardActions(
-            onNext = {
-                if (isLast) {
-                    keyboardController!!.hide()
-                    focusManager.clearFocus()
-                } else {
-                    focusManager.moveFocus(FocusDirection.Down)
-                }
-            }
-        ),
-            keyboardOptions = KeyboardOptions.Default.copy(
-                capitalization =
-                if (iscapital) {
-                    KeyboardCapitalization.Characters
-                } else {
-                    KeyboardCapitalization.Sentences
-                },
-                imeAction = ImeAction.Next,
-                keyboardType = if (isemail) {
-                    KeyboardType.Email
-                } else if (ismobile) {
-                    KeyboardType.Phone
-                } else if (ispincode) {
-                    KeyboardType.Number
-                } else {
-                    KeyboardType.Text
-                },
-                //imeAction = ImeAction.Done
-            ),
-        )
-
-        isError = if (isvalidate) {
+    isError = if(iserror){
+        true
+    }else{
+        if (isvalidate) {
             !isvalid
         } else if (isemail) {
             !isemailValid
@@ -312,15 +201,128 @@ fun CustomTextField(
         } else {
             false
         }
-
-        if (isError) {
-            CustomText(
-                "Please enter a valid $title",
-                color = Color.Red,
-                txtsize = 10.sp,
-                modifier = modifier.padding(start = 8.dp)
-            )
-        }
     }
-    // return isError
+
+    OutlinedTextField(
+        value = value,
+        onValueChange = {
+            onValueChange(it)
+            if (isvalidate) {
+                isvalid = !TextUtils.isEmpty(it)
+            }
+            if (isemail) {
+                isemailValid = android.util.Patterns.EMAIL_ADDRESS.matcher(it).matches()
+            }
+            if (ismobile) {
+                ismobileValid = it.length >= 10
+            }
+            if (ispincode) {
+                ispincodeValid = it.length >= 6
+            }
+        },
+        enabled = isenabled,
+        leadingIcon = starticon,
+        trailingIcon = {
+            if (isError) {
+                IconButton(onClick = { }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Info,
+                        contentDescription = "Error",
+                        tint = Color.Red
+                    )
+                }
+            } else {
+                endicon?.invoke()
+            }
+        },
+        textStyle = MaterialTheme.typography.bodyMedium,
+        supportingText = {
+            if (isError) {
+                CustomText(
+                    "Please enter a valid $title",
+                    color = Color.Red,
+                    txtsize = 9.sp,
+                )
+            } else {
+                if (supportingText.isNotEmpty()) {
+                    CustomText(
+                        supportingText,
+                        txtsize = 9.sp,
+                    )
+                }
+            }
+        },
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(1.dp)
+           /* .focusRequester(
+                 focusRequester =
+                 (if (isFocused) {
+                     rememberUpdatedState(isFocused)
+                 } else {
+                     FocusRequester()
+                 }) as FocusRequester
+             )*/
+            .onPreviewKeyEvent {
+                if (it.key == Key.Tab && it.nativeKeyEvent.action == ACTION_DOWN) {
+                    if (isLast) {
+                        keyboardController!!.hide()
+                        focusManager.clearFocus()
+                    } else {
+                        focusManager.moveFocus(FocusDirection.Down)
+                    }
+                    true
+                } else {
+                    false
+                }
+            },
+        label = {
+            CustomText(
+                title,
+                txtsize = 12.sp,
+                color =
+                if (isError) {
+                    Color.Red
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                }
+            )
+        },
+        isError = isError,
+        keyboardActions = KeyboardActions(
+            onNext = {
+                if (isLast) {
+                    keyboardController!!.hide()
+                    focusManager.clearFocus()
+                } else {
+                    focusManager.moveFocus(FocusDirection.Down)
+                }
+            }
+        ),
+        keyboardOptions = KeyboardOptions.Default.copy(
+            capitalization =
+            if (iscapital) {
+                KeyboardCapitalization.Characters
+            } else {
+                KeyboardCapitalization.Sentences
+            },
+            imeAction =
+            if (isLast) {
+                ImeAction.Done
+            } else {
+                ImeAction.Next
+            },
+            keyboardType = if (isemail) {
+                KeyboardType.Email
+            } else if (ismobile) {
+                KeyboardType.Phone
+            } else if (ispincode) {
+                KeyboardType.Number
+            } else if (isnumber) {
+                KeyboardType.Number
+            } else {
+                KeyboardType.Text
+            },
+        )
+    )
 }

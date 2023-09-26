@@ -13,6 +13,7 @@ import com.whis.repository.WorkoutRepository
 import com.whis.utils.SOME_ERROR_OCCURED
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -31,13 +32,13 @@ class WorkoutListViewModel @Inject constructor(
     private val _apiState = MutableStateFlow<ValidationState>(ValidationState.Ideal)
     val apiState = _apiState.asStateFlow()
 
-//    val workoutList: MutableLiveData<List<WorkoutListBean.Data?>?> =
-//        MutableLiveData(arrayListOf())
-
     private val _workoutListFlow = MutableStateFlow<SnapshotStateList<WorkoutListBean.Data?>?>(
         mutableStateListOf()
     )
     val workoutList = _workoutListFlow.asStateFlow()
+
+    private val _showRemoveWorkoutFlow = MutableStateFlow(false)
+    val showRemoveWorkout = _showRemoveWorkoutFlow.asStateFlow()
 
     init {
         getWorkouts()
@@ -47,6 +48,10 @@ class WorkoutListViewModel @Inject constructor(
         _showLoadingFlow.value = value
     }
 
+    fun setshowRemoveWorkout(value: Boolean) {
+        _showRemoveWorkoutFlow.value = value
+    }
+
     fun getWorkouts(id: String? = null) {
         val tag = "workout_list"
         if (_workoutListFlow.value!!.isEmpty()) {
@@ -54,7 +59,6 @@ class WorkoutListViewModel @Inject constructor(
         }
 
         val data = HashMap<String?, Any?>()
-        data.put("username", "darkprnce")
         data.put("id", id)
         viewModelScope.launch(Dispatchers.IO) {
             val bean = workoutRepository.getWorkoutList(data)
@@ -79,9 +83,24 @@ class WorkoutListViewModel @Inject constructor(
                             removeList.add(item!!)
                         }
                     }
+                    val changeList = arrayListOf<WorkoutListBean.Data>()
+                    for (item in bean.data!!) {
+                        val findItem = _workoutListFlow.value!!.find { it!!.id == item!!.id }
+                        if (findItem != null) {
+                            if (!item!!.equals(findItem)) {
+                                changeList.add(item)
+                            }
+                        }
+                    }
+
                     _workoutListFlow.update {
                         it!!.removeAll(removeList)
                         it.addAll(addList)
+                        for (item in changeList){
+                            val findItem = it.find { it!!.id == item.id }
+                            it.add(it.indexOf(findItem),item)
+                            it.remove(findItem)
+                        }
                         it
                     }
                 }

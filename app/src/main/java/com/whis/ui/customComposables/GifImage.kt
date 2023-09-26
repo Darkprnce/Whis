@@ -7,17 +7,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import coil.ImageLoader
 import coil.compose.rememberAsyncImagePainter
 import coil.decode.GifDecoder
 import coil.decode.ImageDecoderDecoder
 import coil.request.ImageRequest
 import coil.size.Size
+import com.skydoves.landscapist.ImageOptions
+import com.skydoves.landscapist.glide.GlideImage
+import com.whis.R
 
+/*
 @Composable
 fun GifImage(
     modifier: Modifier = Modifier,
     imageUrl: Any,
+    error: Int = R.drawable.broken_image,
+    placeholder: Int = R.drawable.loading_small,
     contentScale: ContentScale = ContentScale.Fit,
 ) {
     val context = LocalContext.current
@@ -34,10 +41,37 @@ fun GifImage(
         painter = rememberAsyncImagePainter(
             ImageRequest.Builder(context).data(data = imageUrl).apply(block = {
                 size(Size.ORIGINAL)
-            }).build(), imageLoader = imageLoader
+            }).error(error).placeholder(placeholder).build(),
+            imageLoader = imageLoader
         ),
         contentScale = contentScale,
         contentDescription = null,
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+*/
+
+
+@Composable
+fun GifImage(
+    imageUrl: Any,
+    modifier: Modifier = Modifier,
+    error: Int = R.drawable.broken_image,
+    placeholder: Int = R.drawable.loading_small,
+    contentScale: ContentScale = ContentScale.Fit,
+) {
+    GlideImage(
+        imageModel = { imageUrl },
+        imageOptions = ImageOptions(
+            contentScale = contentScale,
+        ),
+        previewPlaceholder = placeholder,
+        failure = {
+            Image(
+                painter =
+                painterResource(id = error), contentDescription = null
+            )
+        },
         modifier = modifier.fillMaxWidth(),
     )
 }
