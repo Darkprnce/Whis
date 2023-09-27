@@ -1,4 +1,4 @@
-package com.whis.Network
+package com.whis.Network.sealed
 
 sealed class ValidationState {
     object Ideal : ValidationState()

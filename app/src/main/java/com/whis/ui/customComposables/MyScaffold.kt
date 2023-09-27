@@ -16,13 +16,17 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.whis.Network.ConnectionUtil.connectivityState
+import com.whis.Network.sealed.ConnectionState
 import com.whis.ui.theme.White
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalCoroutinesApi::class)
 @Composable
 fun MyScaffold(
     modifier: Modifier = Modifier,
@@ -35,6 +39,8 @@ fun MyScaffold(
     content: @Composable (SnackbarHostState) -> Unit,
 ) {
     //val snackBarHostState = remember { SnackbarHostState() }
+    val connection by connectivityState()
+    val isConnected = connection === ConnectionState.Available
 
     Scaffold(
         modifier = modifier,
@@ -77,6 +83,7 @@ fun MyScaffold(
                     .padding(padding)
                     .imePadding()
             ) {
+                ConnectivityStatus(isConnected)
                 content(snackBarState)
             }
         })

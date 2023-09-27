@@ -1,19 +1,16 @@
 package com.whis.ui.screen.workoutlist.viewmodel
 
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.whis.Network.ValidationState
+import com.whis.Network.sealed.ValidationState
 import com.whis.model.WorkoutListBean
-import com.whis.repository.ExerciseListRepository
 import com.whis.repository.WorkoutRepository
 import com.whis.utils.SOME_ERROR_OCCURED
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -87,7 +84,7 @@ class WorkoutListViewModel @Inject constructor(
                     for (item in bean.data!!) {
                         val findItem = _workoutListFlow.value!!.find { it!!.id == item!!.id }
                         if (findItem != null) {
-                            if (!item!!.equals(findItem)) {
+                            if (item!! != findItem) {
                                 changeList.add(item)
                             }
                         }
@@ -96,10 +93,11 @@ class WorkoutListViewModel @Inject constructor(
                     _workoutListFlow.update {
                         it!!.removeAll(removeList)
                         it.addAll(addList)
-                        for (item in changeList){
-                            val findItem = it.find { it!!.id == item.id }
-                            it.add(it.indexOf(findItem),item)
-                            it.remove(findItem)
+                        if(changeList.size>0){
+                            for (item in changeList){
+                                val findItem = it.find { it!!.id == item.id }
+                                it.set(it.indexOf(findItem),item)
+                            }
                         }
                         it
                     }

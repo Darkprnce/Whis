@@ -1,6 +1,7 @@
 package com.whis.ui.screen.workoutlist.ui
 
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,17 +23,14 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -41,9 +39,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.whis.Network.ValidationState
+import com.whis.Network.ConnectionUtil.connectivityState
+import com.whis.Network.sealed.ConnectionState
+import com.whis.Network.sealed.ValidationState
 import com.whis.R
 import com.whis.model.WorkoutListBean
+import com.whis.ui.customComposables.ConnectivityStatus
 import com.whis.ui.customComposables.CustomButton
 import com.whis.ui.customComposables.CustomDialog
 import com.whis.ui.customComposables.CustomText
@@ -163,6 +164,7 @@ fun WorkoutListScreen(
         })
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun WorkoutItem(
     workout: WorkoutListBean.Data,
@@ -172,19 +174,16 @@ fun WorkoutItem(
     sharedViewModel: SharedViewModel
 ) {
     val showRemoveWorkout by workoutListViewModel.showRemoveWorkout.collectAsStateWithLifecycle()
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp)
-            .pointerInput(Unit) {
-                detectTapGestures(onTap = {
-                    sharedViewModel.setWorkout(workout)
-                    navHostController.navigate("workout_edit")
-                }, onLongPress = {
-                    workoutListViewModel.setshowRemoveWorkout(true)
-                })
-            }
+            .combinedClickable (onClick = {
+                sharedViewModel.setWorkout(workout)
+                navHostController.navigate("workout_edit")
+            }, onLongClick = {
+                workoutListViewModel.setshowRemoveWorkout(true)
+            })
     ) {
         Box(contentAlignment = Alignment.BottomStart) {
             GifImage(

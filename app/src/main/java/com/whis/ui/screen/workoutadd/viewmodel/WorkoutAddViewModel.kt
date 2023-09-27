@@ -5,7 +5,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.whis.Network.ValidationState
+import com.whis.Network.sealed.ValidationState
 import com.whis.model.ExerciseListBean
 import com.whis.model.WorkoutListBean
 import com.whis.repository.ExerciseListRepository
@@ -46,8 +46,6 @@ class WorkoutAddViewModel @Inject constructor(
     private val _apiState = MutableSharedFlow<ValidationState>()
     val apiState = _apiState.asSharedFlow()
 
-    //var selectedWorkout = mutableStateOf(WorkoutListBean.Data())
-
     private val _selectedWorkout = MutableStateFlow(WorkoutListBean.Data())
     val selectedWorkout = _selectedWorkout.asStateFlow()
 
@@ -58,8 +56,6 @@ class WorkoutAddViewModel @Inject constructor(
     val titleInputErrorFlow = _titleInputErrorFlow.asStateFlow()
 
     private val _totalTimeInputFlow = MutableStateFlow("")
-
-    //val totalTimeInputFlow: StateFlow<String> get() = _totalTimeInputFlow
     val totalTimeInputFlow = _totalTimeInputFlow.asStateFlow()
 
     private val _totalTimeInputErrorFlow = MutableStateFlow(false)
@@ -177,7 +173,6 @@ class WorkoutAddViewModel @Inject constructor(
     }
 
     fun setWorkout(workout: WorkoutListBean.Data?) {
-
         viewModelScope.launch(Dispatchers.IO) {
             _apiState.emit(ValidationState.Ideal)
             if (workout != null) {
@@ -242,12 +237,12 @@ class WorkoutAddViewModel @Inject constructor(
             if (bean != null) {
                 exerciseList = bean.data!!
                 _exercisesSearchFlow.value = bean.data!!.toMutableStateList()
+                _workoutExercisesFlow.value = mutableStateListOf()
                 if (_selectedWorkout.value.exercises_id != null) {
-                    _workoutExercisesFlow.value = mutableStateListOf()
                     for (item in _selectedWorkout.value.exercises_id!!) {
-                        _workoutExercisesFlow.value.add(exerciseList.find { it!!.id == item!!.id }!!)
                         exerciseList.find { it!!.id == item!!.id }!!.selected = true
                         _exercisesSearchFlow.value.find { it!!.id == item!!.id }!!.selected = true
+                        _workoutExercisesFlow.value.add(exerciseList.find { it!!.id == item!!.id }!!)
                     }
                 }
                 _apiState.emit(ValidationState.Loading(tag, false))

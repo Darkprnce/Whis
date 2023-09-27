@@ -21,7 +21,7 @@ object NetworkModule {
     @Singleton
     fun provideRetrofit(): Retrofit {
         val interceptor = HttpLoggingInterceptor()
-        interceptor.setLevel(HttpLoggingInterceptor.Level.BODY)
+        interceptor.setLevel(HttpLoggingInterceptor.Level.BASIC)
         val client: OkHttpClient = OkHttpClient.Builder()
             .addInterceptor(interceptor)
             .connectTimeout(300, TimeUnit.SECONDS)
@@ -41,11 +41,4 @@ object NetworkModule {
     fun provideWorkoutApi(retrofit: Retrofit): ApiServices {
         return retrofit.create(ApiServices::class.java)
     }
-}
-
-sealed class ApiResponse<out T> {
-    data class Loading(val tag: String,val coroutineScope: CoroutineScope? = null) : ApiResponse<Nothing>()
-    object None : ApiResponse<Nothing>()
-    data class Error<T>(val tag: String,val message: String,val item: T?=null) : ApiResponse<T?>()
-    data class Success<T>(val tag: String,val item: T?) : ApiResponse<T?>()
 }

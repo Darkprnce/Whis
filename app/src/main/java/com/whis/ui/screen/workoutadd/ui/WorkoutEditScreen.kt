@@ -18,10 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.List
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
@@ -30,7 +27,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,13 +40,12 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
-import com.whis.Network.ValidationState
+import com.whis.Network.sealed.ValidationState
 import com.whis.R
 import com.whis.ui.customComposables.CustomButton
 import com.whis.ui.customComposables.CustomDialog
@@ -62,7 +57,6 @@ import com.whis.ui.customComposables.LoadingDialog
 import com.whis.ui.customComposables.MyScaffold
 import com.whis.ui.screen.SharedViewModel
 import com.whis.ui.screen.workoutadd.viewmodel.WorkoutAddViewModel
-import com.whis.ui.theme.Blue
 import com.whis.ui.theme.Green
 import com.whis.ui.theme.Red
 import com.whis.ui.theme.White
@@ -72,7 +66,6 @@ import org.burnoutcrew.reorderable.ReorderableItem
 import org.burnoutcrew.reorderable.detectReorderAfterLongPress
 import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
-import timber.log.Timber
 
 @Composable
 fun WorkoutEditScreen(
