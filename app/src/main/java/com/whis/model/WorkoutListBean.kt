@@ -1,7 +1,7 @@
 package com.whis.model
 
 data class WorkoutListBean(
-    var `data`: List<Data?>? = null,
+    var `data`: List<Data>? = null,
     var msg: String? = null,
     var response_time: String? = null,
     var status: String? = null

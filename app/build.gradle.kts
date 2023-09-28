@@ -104,6 +104,7 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.10")
     implementation("com.squareup.okhttp3:okhttp:5.0.0-alpha.6")
+    implementation("com.github.skydoves:sandwich:1.3.9")
 
     //Pager
     implementation("com.google.accompanist:accompanist-pager:0.29.1-alpha")

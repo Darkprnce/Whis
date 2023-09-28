@@ -1,5 +1,6 @@
 package com.whis.Network
 
+import com.skydoves.sandwich.ApiResponse
 import com.whis.model.ExerciseAddBean
 import com.whis.model.ExerciseListBean
 import com.whis.model.ExerciseRemoveBean
@@ -17,7 +18,7 @@ interface ApiServices {
     suspend fun workout_list(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
-    ): Response<WorkoutListBean?>
+    ): ApiResponse<WorkoutListBean?>
 
     @POST("add_workout")
     suspend fun workout_add(
