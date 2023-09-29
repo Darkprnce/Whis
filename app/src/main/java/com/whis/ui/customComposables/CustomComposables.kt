@@ -149,6 +149,7 @@ fun CustomButton(
     } else {
         Button(
             onClick = onClick,
+            elevation = ButtonDefaults.buttonElevation(defaultElevation = 5.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = bgcolor ?: MaterialTheme.colorScheme.primary
             ),
@@ -255,7 +256,7 @@ fun CustomTextField(
         modifier = modifier
             .fillMaxWidth()
             .padding(1.dp)
-           /* .focusRequester(
+            /* .focusRequester(
                  focusRequester =
                  (if (isFocused) {
                      rememberUpdatedState(isFocused)

@@ -68,7 +68,7 @@ import org.burnoutcrew.reorderable.rememberReorderableLazyListState
 import org.burnoutcrew.reorderable.reorderable
 
 @Composable
-fun WorkoutEditScreen(
+fun WorkoutAddScreen(
     modifier: Modifier = Modifier,
     workoutAddViewModel: WorkoutAddViewModel = hiltViewModel(),
     navHostController: NavHostController,
@@ -234,7 +234,7 @@ fun WorkoutEditScreen(
                             .padding(top = 5.dp)
                     )
                     LazyColumn(
-                        modifier = modifier.height(450.dp)
+                        modifier = modifier.height(430.dp)
                     ) {
                         items(exersisesSearch, key = { item -> "search_${item!!.id!!}" }) { item ->
                             ExerciseSearchItem(
@@ -439,6 +439,11 @@ fun WorkoutEditScreen(
                     } else {
                         imageUrl
                     },
+                    tint = if (checkString(imageUrl, isempty = true).isEmpty()) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        null
+                    },
                     modifier = modifier
                         .padding(top = 5.dp)
                         .height(100.dp)
@@ -464,6 +469,7 @@ fun WorkoutEditScreen(
                         ) {
                             GifImage(
                                 R.drawable.file_icon,
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                         Spacer(modifier = Modifier.width(5.dp))
@@ -476,6 +482,7 @@ fun WorkoutEditScreen(
                         ) {
                             GifImage(
                                 R.drawable.add_icon,
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }

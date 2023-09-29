@@ -14,6 +14,7 @@ import com.whis.model.WorkoutRemoveBean
 import com.whis.utils.NO_INTERNET_CONNECTION
 import com.whis.utils.SERVER_ERROR
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
@@ -37,37 +38,77 @@ class WorkoutRepository @Inject constructor(
                 }
             }
 
-            val response = workoutClient.workout_list(BuildConfig.API_KEY, data)
-            response.suspendOnSuccess {
-                emit(ApiResp.Success(tag, this.data))
-            }.suspendOnError {
-                emit(ApiResp.Error(tag, SERVER_ERROR,null))
-            }.suspendOnException {
-                emit(ApiResp.Error(tag, NO_INTERNET_CONNECTION,null))
-            }
+            workoutClient.workout_list(BuildConfig.API_KEY, data)
+                .suspendOnSuccess {
+                    if (this.data != null) {
+                        if (this.data!!.status.equals("success")) {
+                            emit(ApiResp.Success(tag, this.data))
+                        } else {
+                            emit(ApiResp.Error(tag, SERVER_ERROR, this.data!!.msg))
+                        }
+                    } else {
+                        emit(ApiResp.Error(tag, SERVER_ERROR, null))
+                    }
+                }.suspendOnError {
+                    emit(ApiResp.Error(tag, SERVER_ERROR, null))
+                }.suspendOnException {
+                    emit(ApiResp.Error(tag, NO_INTERNET_CONNECTION, null))
+                }
         }.flowOn(Dispatchers.IO)
 
-    suspend fun addWorkout(data: HashMap<String?, Any?>): WorkoutAddBean? =
-        withContext(Dispatchers.IO) {
+    suspend fun addWorkout(data: HashMap<String?, Any?>) =
+        flow {
+            val tag = "add_workout"
+            emit(ApiResp.Loading(tag))
             data.put("username", "darkprnce")
             for (item in data.values) {
                 if (item is String || item is Int || item is Double || item is Float) {
                     item.toString().trim()
                 }
             }
-            val response = workoutClient.workout_add(BuildConfig.API_KEY, data)
-            response.body()
-        }
+            workoutClient.workout_add(BuildConfig.API_KEY, data)
+                .suspendOnSuccess {
+                    if (this.data != null) {
+                        if (this.data!!.status.equals("success")) {
+                            emit(ApiResp.Success(tag, this.data))
+                        } else {
+                            emit(ApiResp.Error(tag, SERVER_ERROR, this.data!!.msg))
+                        }
+                    } else {
+                        emit(ApiResp.Error(tag, SERVER_ERROR, null))
+                    }
+                }.suspendOnError {
+                    emit(ApiResp.Error(tag, SERVER_ERROR, null))
+                }.suspendOnException {
+                    emit(ApiResp.Error(tag, NO_INTERNET_CONNECTION, null))
+                }
+        }.flowOn(Dispatchers.IO)
 
-    suspend fun removeWorkout(data: HashMap<String?, Any?>): WorkoutRemoveBean? =
-        withContext(Dispatchers.IO) {
+    suspend fun removeWorkout(data: HashMap<String?, Any?>) =
+        flow {
+            val tag = "remove_workout"
+            emit(ApiResp.Loading(tag))
             data.put("username", "darkprnce")
             for (item in data.values) {
                 if (item is String || item is Int || item is Double || item is Float) {
                     item.toString().trim()
                 }
             }
-            val response = workoutClient.workout_remove(BuildConfig.API_KEY, data)
-            response.body()
-        }
+            workoutClient.workout_remove(BuildConfig.API_KEY, data)
+                .suspendOnSuccess {
+                    if (this.data != null) {
+                        if (this.data!!.status.equals("success")) {
+                            emit(ApiResp.Success(tag, this.data))
+                        } else {
+                            emit(ApiResp.Error(tag, SERVER_ERROR, this.data!!.msg))
+                        }
+                    } else {
+                        emit(ApiResp.Error(tag, SERVER_ERROR, null))
+                    }
+                }.suspendOnError {
+                    emit(ApiResp.Error(tag, SERVER_ERROR, null))
+                }.suspendOnException {
+                    emit(ApiResp.Error(tag, NO_INTERNET_CONNECTION, null))
+                }
+        }.flowOn(Dispatchers.IO)
 }

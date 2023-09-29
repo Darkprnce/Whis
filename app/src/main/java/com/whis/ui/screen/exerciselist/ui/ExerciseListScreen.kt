@@ -1,9 +1,9 @@
-package com.whis.ui.screen.workoutlist.ui
+package com.whis.ui.screen.exerciselist.ui
+
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -27,11 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -41,7 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.whis.Network.sealed.ValidationState
 import com.whis.R
-import com.whis.model.WorkoutListBean
+import com.whis.model.ExerciseListBean
 import com.whis.routes.Screen
 import com.whis.ui.customComposables.CustomButton
 import com.whis.ui.customComposables.CustomDialog
@@ -50,16 +46,15 @@ import com.whis.ui.customComposables.GifImage
 import com.whis.ui.customComposables.MyScaffold
 import com.whis.ui.customComposables.ShimmerListItem
 import com.whis.ui.screen.SharedViewModel
-import com.whis.ui.screen.workoutlist.viewmodel.WorkoutListViewModel
+import com.whis.ui.screen.exerciselist.viewmodel.ExerciseListViewModel
 import com.whis.ui.theme.Green
 import com.whis.ui.theme.Red
 import com.whis.ui.theme.White
-import kotlinx.coroutines.launch
 
 @Composable
-fun WorkoutListScreen(
+fun ExerciseListScreen(
     modifier: Modifier = Modifier,
-    workoutListViewModel: WorkoutListViewModel = hiltViewModel(),
+    exerciseListViewModel: ExerciseListViewModel = hiltViewModel(),
     navHostController: NavHostController,
     sharedViewModel: SharedViewModel,
 ) {
@@ -71,9 +66,9 @@ fun WorkoutListScreen(
 
     LaunchedEffect(key1 = Unit) {
         if (refresh) {
-            workoutListViewModel.getWorkouts()
+            exerciseListViewModel.getExercise()
         }
-        workoutListViewModel.apiState.collect { apiState ->
+        exerciseListViewModel.apiState.collect { apiState ->
             when (apiState) {
                 is ValidationState.Loading -> {
                 }
@@ -95,19 +90,19 @@ fun WorkoutListScreen(
         }
     }
 
-    val workouts by workoutListViewModel.workoutList.collectAsStateWithLifecycle()
-    val showListLoading by workoutListViewModel.showLoading.collectAsStateWithLifecycle()
-    val showRemoveWorkout by workoutListViewModel.showRemoveWorkout.collectAsStateWithLifecycle()
+    val workouts by exerciseListViewModel.exerciseList.collectAsStateWithLifecycle()
+    val showListLoading by exerciseListViewModel.showLoading.collectAsStateWithLifecycle()
+    val showRemoveWorkout by exerciseListViewModel.showRemoveExercise.collectAsStateWithLifecycle()
 
     MyScaffold(
-        title = "Workout List",
+        title = "Exercise List",
         isbackAvailable = false,
         navHostController = navHostController,
         snackBarState = snackBarHostState,
         actions = {
             IconButton(onClick = {
                 sharedViewModel.setWorkout(null)
-                navHostController.navigate(Screen.WorkoutEdit.route)
+                navHostController.navigate(Screen.ExerciseEdit.route)
             }) {
                 Icon(
                     Icons.Filled.Add,
@@ -120,17 +115,17 @@ fun WorkoutListScreen(
             if (showRemoveWorkout != null) {
                 CustomDialog(
                     onDismissRequest = {
-                        workoutListViewModel.setshowRemoveWorkout(null)
+                        exerciseListViewModel.setshowRemoveWorkout(null)
                     }
                 ) {
                     CustomText(
-                        value = "${stringResource(id = R.string.remove_btn)} ${showRemoveWorkout!!.title}",
+                        value = "${stringResource(id = R.string.remove_btn)} ${showRemoveWorkout!!.name}",
                         isheading = true,
                         txtsize = 18.sp,
                         modifier = modifier.align(Alignment.Start)
                     )
                     CustomText(
-                        value = stringResource(R.string.do_you_want_to_remove_this_workout),
+                        value = stringResource(R.string.do_you_want_to_remove_this_exercise),
                         modifier = modifier.align(Alignment.Start)
                     )
                     Row {
@@ -138,7 +133,7 @@ fun WorkoutListScreen(
                             value = stringResource(R.string.cancel_btn),
                             bgcolor = Red,
                             onClick = {
-                                workoutListViewModel.setshowRemoveWorkout(null)
+                                exerciseListViewModel.setshowRemoveWorkout(null)
                             }, modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1.0f)
@@ -147,10 +142,10 @@ fun WorkoutListScreen(
                         CustomButton(
                             value = stringResource(R.string.remove_btn),
                             bgcolor = Green, onClick = {
-                                workoutListViewModel.setshowRemoveWorkout(null)
+                                exerciseListViewModel.setshowRemoveWorkout(null)
                                 val data = HashMap<String?, Any?>()
                                 data.put("id", showRemoveWorkout!!.id)
-                                workoutListViewModel.removeWorkout(data)
+                                exerciseListViewModel.removeWorkout(data)
                             }, modifier = Modifier
                                 .fillMaxWidth()
                                 .weight(1.0f)
@@ -166,15 +161,15 @@ fun WorkoutListScreen(
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
                             items(
                                 workouts,
-                                key = { item -> "workout_${item.id!!}" }) { item ->
-                                WorkoutItem(
+                                key = { item -> "exercise_${item.id!!}" }) { item ->
+                                ExerciseItem(
                                     modifier = modifier,
-                                    workout = item,
+                                    item = item,
                                     onClick = {
-                                        sharedViewModel.setWorkout(item)
-                                        navHostController.navigate(Screen.WorkoutEdit.route)
+                                        sharedViewModel.setExercise(item)
+                                        navHostController.navigate(Screen.ExerciseEdit.route)
                                     }, onLongClick = {
-                                        workoutListViewModel.setshowRemoveWorkout(item)
+                                        exerciseListViewModel.setshowRemoveWorkout(item)
                                     }
                                 )
                             }
@@ -189,7 +184,7 @@ fun WorkoutListScreen(
                                 modifier = modifier.height(250.dp)
                             )
                             CustomText(
-                                value = stringResource(R.string.no_workouts),
+                                value = stringResource(R.string.no_exercises),
                                 isheading = true,
                                 txtsize = 18.sp,
                                 modifier = modifier.padding(top = 10.dp)
@@ -202,8 +197,8 @@ fun WorkoutListScreen(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun WorkoutItem(
-    workout: WorkoutListBean.Data,
+fun ExerciseItem(
+    item: ExerciseListBean.Data,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
     modifier: Modifier,
@@ -214,30 +209,18 @@ fun WorkoutItem(
             .padding(8.dp)
             .combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
-        Box(contentAlignment = Alignment.BottomStart) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             GifImage(
-                imageUrl = workout.image_url!!,
-                contentScale = ContentScale.FillBounds,
-                modifier = Modifier
-                    .height(150.dp)
-                    .fillMaxWidth()
-                    .drawWithCache {
-                        val gradient = Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, Color.Black),
-                            startY = size.height / 3,
-                            endY = size.height
-                        )
-                        onDrawWithContent {
-                            drawContent()
-                            drawRect(gradient, blendMode = BlendMode.Multiply)
-                        }
-                    }
+                imageUrl = item.gifurl!!,
+                modifier = modifier
+                    .height(80.dp)
+                    .width(80.dp)
             )
             CustomText(
-                workout.title!!,
-                color = White,
-                isbold = true,
-                modifier = Modifier.padding(10.dp)
+                item.name!!, modifier = modifier
+                    .fillMaxWidth()
+                    .padding(10.dp)
+                    .weight(1f)
             )
         }
     }

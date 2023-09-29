@@ -3,8 +3,11 @@ package com.whis.ui.customComposables
 import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -56,6 +59,7 @@ fun GifImage(
 fun GifImage(
     imageUrl: Any,
     modifier: Modifier = Modifier,
+    tint: Color? = null,
     error: Int = R.drawable.broken_image,
     placeholder: Int = R.drawable.loading_small,
     contentScale: ContentScale = ContentScale.Fit,
@@ -64,12 +68,23 @@ fun GifImage(
         imageModel = { imageUrl },
         imageOptions = ImageOptions(
             contentScale = contentScale,
+            colorFilter = if (tint != null) {
+                ColorFilter.tint(tint)
+            } else {
+                null
+            }
         ),
         previewPlaceholder = placeholder,
         failure = {
             Image(
                 painter =
-                painterResource(id = error), contentDescription = null
+                painterResource(id = error),
+                contentDescription = null,
+                colorFilter = if (tint != null) {
+                    ColorFilter.tint(tint)
+                } else {
+                    null
+                }
             )
         },
         modifier = modifier.fillMaxWidth(),

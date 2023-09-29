@@ -24,29 +24,29 @@ interface ApiServices {
     suspend fun workout_add(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
-    ): Response<WorkoutAddBean?>
+    ): ApiResponse<WorkoutAddBean?>
 
     @POST("remove_workout")
     suspend fun workout_remove(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
-    ): Response<WorkoutRemoveBean?>
+    ): ApiResponse<WorkoutRemoveBean?>
 
     @POST("exercise_list")
     suspend fun exercise_list(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
-    ): Response<ExerciseListBean?>
+    ): ApiResponse<ExerciseListBean?>
 
     @POST("add_exercise")
     suspend fun exercise_add(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
-    ): Response<ExerciseAddBean?>
+    ): ApiResponse<ExerciseAddBean?>
 
     @POST("remove_exercise")
     suspend fun exercise_remove(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
-    ): Response<ExerciseRemoveBean?>
+    ): ApiResponse<ExerciseRemoveBean?>
 }

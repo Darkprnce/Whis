@@ -5,9 +5,12 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.whis.Network.sealed.ApiResp
 import com.whis.Network.sealed.ValidationState
 import com.whis.model.ExerciseListBean
+import com.whis.model.WorkoutAddBean
 import com.whis.model.WorkoutListBean
+import com.whis.model.WorkoutRemoveBean
 import com.whis.repository.ExerciseListRepository
 import com.whis.repository.WorkoutRepository
 import com.whis.utils.SOME_ERROR_OCCURED
@@ -230,28 +233,39 @@ class WorkoutAddViewModel @Inject constructor(
 
     private fun getExercises() {
         val tag = "exercise_list"
-        viewModelScope.launch(Dispatchers.IO) {
-            _apiState.emit(ValidationState.Loading(tag, true))
+        viewModelScope.launch {
             val data = HashMap<String?, Any?>()
-            val bean = exerciseListRepository.getExerciseList(data)
-            if (bean != null) {
-                exerciseList = bean.data!!
-                _exercisesSearchFlow.value = bean.data!!.toMutableStateList()
-                _workoutExercisesFlow.value = mutableStateListOf()
-                if (_selectedWorkout.value.exercises_id != null) {
-                    for (item in _selectedWorkout.value.exercises_id!!) {
-                        exerciseList.find { it!!.id == item!!.id }!!.selected = true
-                        _exercisesSearchFlow.value.find { it!!.id == item!!.id }!!.selected = true
-                        _workoutExercisesFlow.value.add(exerciseList.find { it!!.id == item!!.id }!!)
+            exerciseListRepository.getExerciseList(data).collect { resp ->
+                when (resp) {
+                    is ApiResp.Loading -> {
+                        _apiState.emit(ValidationState.Loading(tag, true))
+                    }
+
+                    is ApiResp.Error -> {
+                        exerciseList = arrayListOf()
+                        _exercisesSearchFlow.value = mutableStateListOf()
+                        _workoutExercisesFlow.value = mutableStateListOf()
+                        _apiState.emit(ValidationState.Loading(tag, false))
+                    }
+
+                    is ApiResp.Success -> {
+                        val respData = resp.item as ExerciseListBean
+                        exerciseList = respData.data!!
+                        _exercisesSearchFlow.value = respData.data!!.toMutableStateList()
+                        _workoutExercisesFlow.value = mutableStateListOf()
+                        if (_selectedWorkout.value.exercises_id != null) {
+                            for (item in _selectedWorkout.value.exercises_id!!) {
+                                exerciseList.find { it!!.id == item!!.id }!!.selected = true
+                                _exercisesSearchFlow.value.find { it!!.id == item!!.id }!!.selected =
+                                    true
+                                _workoutExercisesFlow.value.add(exerciseList.find { it!!.id == item!!.id }!!)
+                            }
+                        }
+                        _apiState.emit(ValidationState.Loading(tag, false))
                     }
                 }
-                _apiState.emit(ValidationState.Loading(tag, false))
-            } else {
-                exerciseList = arrayListOf()
-                _exercisesSearchFlow.value = mutableStateListOf()
-                _workoutExercisesFlow.value = mutableStateListOf()
-                _apiState.emit(ValidationState.Loading(tag, false))
             }
+
         }
     }
 
@@ -299,45 +313,50 @@ class WorkoutAddViewModel @Inject constructor(
         }
     }
 
-    fun exerciseExist(item: ExerciseListBean.Data): Boolean {
-        val find_item = _workoutExercisesFlow.value.find { it.id == item.id }
-        return find_item != null
-    }
-
     fun addWorkout(data: HashMap<String?, Any?>) {
-        val tag = "add_workout"
-        viewModelScope.launch(Dispatchers.IO) {
-            _apiState.emit(ValidationState.Loading(tag, true))
-            val bean = workoutRepository.addWorkout(data)
-            if (bean != null) {
-                _apiState.emit(ValidationState.Loading(tag, false))
-                if (bean.status.equals("success", ignoreCase = true)) {
-                    _apiState.emit(ValidationState.Success(tag, bean.msg!!))
-                } else {
-                    _apiState.emit(ValidationState.Error(tag, bean.msg!!))
+        viewModelScope.launch {
+            val tag = "add_workout"
+            workoutRepository.addWorkout(data).collect { resp ->
+                when (resp) {
+                    is ApiResp.Loading -> {
+                        _apiState.emit(ValidationState.Loading(tag, true))
+                    }
+
+                    is ApiResp.Error -> {
+                        _apiState.emit(ValidationState.Loading(tag, false))
+                        _apiState.emit(ValidationState.Error(tag, resp.message))
+                    }
+
+                    is ApiResp.Success -> {
+                        val respData = resp.item as WorkoutAddBean
+                        _apiState.emit(ValidationState.Loading(tag, false))
+                        _apiState.emit(ValidationState.Success(tag, respData.msg!!))
+                    }
                 }
-            } else {
-                _apiState.emit(ValidationState.Loading(tag, false))
-                _apiState.emit(ValidationState.Error(tag, SOME_ERROR_OCCURED))
             }
         }
     }
 
     fun removeWorkout(data: HashMap<String?, Any?>) {
-        val tag = "remove_workout"
-        viewModelScope.launch(Dispatchers.IO) {
-            _apiState.emit(ValidationState.Loading(tag, true))
-            val bean = workoutRepository.removeWorkout(data)
-            if (bean != null) {
-                _apiState.emit(ValidationState.Loading(tag, false))
-                if (bean.status.equals("success", ignoreCase = true)) {
-                    _apiState.emit(ValidationState.Success(tag, bean.msg!!))
-                } else {
-                    _apiState.emit(ValidationState.Error(tag, bean.msg!!))
+        viewModelScope.launch {
+            val tag = "remove_workout"
+            workoutRepository.removeWorkout(data).collect { resp ->
+                when (resp) {
+                    is ApiResp.Loading -> {
+                        _apiState.emit(ValidationState.Loading(tag, true))
+                    }
+
+                    is ApiResp.Error -> {
+                        _apiState.emit(ValidationState.Loading(tag, false))
+                        _apiState.emit(ValidationState.Error(tag, resp.message))
+                    }
+
+                    is ApiResp.Success -> {
+                        val respData = resp.item as WorkoutRemoveBean
+                        _apiState.emit(ValidationState.Loading(tag, false))
+                        _apiState.emit(ValidationState.Success(tag, respData.msg!!))
+                    }
                 }
-            } else {
-                _apiState.emit(ValidationState.Loading(tag, false))
-                _apiState.emit(ValidationState.Error(tag, SOME_ERROR_OCCURED))
             }
         }
     }
