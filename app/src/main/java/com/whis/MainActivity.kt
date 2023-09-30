@@ -24,6 +24,7 @@ import com.whis.routes.Screen
 import com.whis.ui.customComposables.CustomText
 import com.whis.ui.customComposables.MyScaffold
 import com.whis.ui.screen.SharedViewModel
+import com.whis.ui.screen.exerciseadd.ui.ExerciseAddScreen
 import com.whis.ui.screen.exerciselist.ui.ExerciseListScreen
 import com.whis.ui.screen.workoutadd.ui.WorkoutAddScreen
 import com.whis.ui.screen.workoutlist.ui.WorkoutListScreen
@@ -48,6 +49,7 @@ class MainActivity : ComponentActivity() {
                     var navigationSelectedItem by remember { mutableStateOf(0) }
                     MyScaffold(
                         isbackAvailable = false,
+                        showConnectivity = false,
                         navHostController = navHostController,
                         content = { _ ->
                             NavHost(
@@ -74,6 +76,14 @@ class MainActivity : ComponentActivity() {
                                     route = Screen.ExerciseList.route,
                                     content = {
                                         ExerciseListScreen(
+                                            sharedViewModel = sharedViewModel,
+                                            navHostController = navHostController
+                                        )
+                                    })
+                                composable(
+                                    route = Screen.ExerciseEdit.route,
+                                    content = {
+                                        ExerciseAddScreen(
                                             sharedViewModel = sharedViewModel,
                                             navHostController = navHostController
                                         )

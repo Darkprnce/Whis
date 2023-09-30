@@ -2,6 +2,7 @@ package com.whis.ui.screen.exerciseadd.viewmodel
 
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.toMutableStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.whis.Network.sealed.ApiResp
@@ -9,8 +10,6 @@ import com.whis.Network.sealed.ValidationState
 import com.whis.model.ExerciseAddBean
 import com.whis.model.ExerciseListBean
 import com.whis.model.ExerciseRemoveBean
-import com.whis.model.WorkoutAddBean
-import com.whis.model.WorkoutRemoveBean
 import com.whis.repository.ExerciseListRepository
 import com.whis.utils.checkString
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,9 +31,6 @@ class ExerciseAddViewModel @Inject constructor(
 
     private var exerciseList: List<ExerciseListBean.Data?> = arrayListOf()
 
-    private val _exercisesSearchFlow =
-        MutableStateFlow<SnapshotStateList<ExerciseListBean.Data?>>(mutableStateListOf())
-    val exercisesSearch = _exercisesSearchFlow.asStateFlow()
 
     private val _apiState = MutableSharedFlow<ValidationState>()
     val apiState = _apiState.asSharedFlow()
@@ -60,112 +56,132 @@ class ExerciseAddViewModel @Inject constructor(
     private val _bodypartInputErrorFlow = MutableStateFlow(false)
     val bodypartInputErrorFlow = _bodypartInputErrorFlow.asStateFlow()
 
-    private val _heartrateMaxInputFlow = MutableStateFlow("")
-    val heartrateMaxInputFlow = _heartrateMaxInputFlow.asStateFlow()
+    private val _equipmentInputFlow = MutableStateFlow("")
+    val equipmentInputFlow = _equipmentInputFlow.asStateFlow()
 
-    private val _heartrateMinInputFlow = MutableStateFlow("")
-    val heartrateMinInputFlow = _heartrateMinInputFlow.asStateFlow()
+    private val _equipmentInputErrorFlow = MutableStateFlow(false)
+    val equipmentInputErrorFlow = _equipmentInputErrorFlow.asStateFlow()
 
-    private val _stressInputFlow = MutableStateFlow("")
-    val stressInputFlow = _stressInputFlow.asStateFlow()
+    private val _gifurlInputFlow = MutableStateFlow("")
+    val gifurlInputFlow = _gifurlInputFlow.asStateFlow()
 
-    private val _spo2InputFlow = MutableStateFlow("")
-    val spo2InputFlow = _spo2InputFlow.asStateFlow()
+    private val _gifurlInputErrorFlow = MutableStateFlow(false)
+    val gifurlInputErrorFlow = _gifurlInputErrorFlow.asStateFlow()
 
-    private val _calorieInputFlow = MutableStateFlow("")
-    val calorieInputFlow = _calorieInputFlow.asStateFlow()
+    private val _repsInputFlow = MutableStateFlow("")
+    val repsInputFlow = _repsInputFlow.asStateFlow()
 
-    private val _musicurlInputFlow = MutableStateFlow("")
-    val musicurlInputFlow = _musicurlInputFlow.asStateFlow()
+    private val _repsInputErrorFlow = MutableStateFlow(false)
+    val repsInputErrorFlow = _repsInputErrorFlow.asStateFlow()
 
-    private val _imageurlInputFlow = MutableStateFlow("")
-    val imageurlInputFlow = _imageurlInputFlow.asStateFlow()
+    private val _restAfterCompletionInputFlow = MutableStateFlow("")
+    val restAfterCompletionInputFlow = _restAfterCompletionInputFlow.asStateFlow()
 
-    private val _imageurlInputErrorFlow = MutableStateFlow(false)
-    val imageurlInputErrorFlow = _imageurlInputErrorFlow.asStateFlow()
+    private val _restAfterCompletionInputErrorFlow = MutableStateFlow(false)
+    val restAfterCompletionInputErrorFlow = _restAfterCompletionInputErrorFlow.asStateFlow()
 
-    private val _searchInputFlow = MutableStateFlow("")
-    val searchInputFlow = _searchInputFlow.asStateFlow()
+    private val _restsInputFlow = MutableStateFlow("")
+    val restsInputFlow = _restsInputFlow.asStateFlow()
 
-    private val _showRemoveWorkoutFlow = MutableStateFlow(false)
-    val showRemoveWorkout = _showRemoveWorkoutFlow.asStateFlow()
+    private val _restsInputErrorFlow = MutableStateFlow(false)
+    val restsInputErrorFlow = _restsInputErrorFlow.asStateFlow()
 
-    private val _showAddExerciseFlow = MutableStateFlow(false)
-    val showAddExercise = _showAddExerciseFlow.asStateFlow()
+    private val _setsInputFlow = MutableStateFlow("")
+    val setsInputFlow = _setsInputFlow.asStateFlow()
 
-    private val _showExerciseMoveFlow = MutableStateFlow(false)
-    val showExerciseMove = _showExerciseMoveFlow.asStateFlow()
+    private val _setsInputErrorFlow = MutableStateFlow(false)
+    val setsInputErrorFlow = _setsInputErrorFlow.asStateFlow()
+
+    private val _targetInputFlow = MutableStateFlow("")
+    val targetInputFlow = _targetInputFlow.asStateFlow()
+
+    private val _targetInputErrorFlow = MutableStateFlow(false)
+    val targetInputErrorFlow = _targetInputErrorFlow.asStateFlow()
+
+    private val _showRemoveExerciseFlow = MutableStateFlow(false)
+    val showRemoveExerciseFlow = _showRemoveExerciseFlow.asStateFlow()
+
     private var _isvalidation = false
 
     fun setShowLoading(value: Boolean) {
         _showLoadingFlow.value = value
     }
 
-    fun setTitle(value: String) {
+    fun setName(value: String) {
         _nameInputFlow.value = value
         if (_isvalidation) {
             _nameInputErrorFlow.value = value.isEmpty()
         }
     }
 
-    fun setTotalTime(value: String) {
+    fun setDuration(value: String) {
         _durationInputFlow.value = value
         if (_isvalidation) {
             _durationInputErrorFlow.value = value.isEmpty()
         }
     }
 
-    fun setUserTime(value: String) {
+    fun setBodyPart(value: String) {
         _bodypartInputFlow.value = value
         if (_isvalidation) {
             _bodypartInputErrorFlow.value = value.isEmpty()
         }
     }
 
-    fun setHeartrateMax(value: String) {
-        _heartrateMaxInputFlow.value = value
-    }
-
-    fun setHeartrateMin(value: String) {
-        _heartrateMinInputFlow.value = value
-    }
-
-    fun setStress(value: String) {
-        _stressInputFlow.value = value
-    }
-
-    fun setSpo2(value: String) {
-        _spo2InputFlow.value = value
-    }
-
-    fun setCalorie(value: String) {
-        _calorieInputFlow.value = value
-    }
-
-    fun setMusicUrl(value: String) {
-        _musicurlInputFlow.value = value
-    }
-
-    fun setImageUrl(value: String) {
-        _imageurlInputFlow.value = value
+    fun setEquipment(value: String) {
+        _equipmentInputFlow.value = value
         if (_isvalidation) {
-            _imageurlInputErrorFlow.value = value.isEmpty()
+            _equipmentInputErrorFlow.value = value.isEmpty()
         }
     }
 
-    fun setshowRemoveWorkout(value: Boolean) {
-        _showRemoveWorkoutFlow.value = value
+    fun setGifurl(value: String) {
+        _gifurlInputFlow.value = value
+        if (_isvalidation) {
+            _gifurlInputErrorFlow.value = value.isEmpty()
+        }
     }
 
-    fun setshowAddExercise(value: Boolean) {
-        _showAddExerciseFlow.value = value
+    fun setReps(value: String) {
+        _repsInputFlow.value = value
+        if (_isvalidation) {
+            _repsInputErrorFlow.value = value.isEmpty()
+        }
     }
 
-    fun setShowExerciseMove(value: Boolean) {
-        _showExerciseMoveFlow.value = value
+    fun setRestAfterCompletion(value: String) {
+        _restAfterCompletionInputFlow.value = value
+        if (_isvalidation) {
+            _restAfterCompletionInputErrorFlow.value = value.isEmpty()
+        }
     }
 
-    fun setWorkout(exercise: ExerciseListBean.Data?) {
+    fun setRests(value: String) {
+        _restsInputFlow.value = value
+        if (_isvalidation) {
+            _restsInputErrorFlow.value = value.isEmpty()
+        }
+    }
+
+    fun setSets(value: String) {
+        _setsInputFlow.value = value
+        if (_isvalidation) {
+            _setsInputErrorFlow.value = value.isEmpty()
+        }
+    }
+
+    fun setTarget(value: String) {
+        _targetInputFlow.value = value
+        if (_isvalidation) {
+            _targetInputErrorFlow.value = value.isEmpty()
+        }
+    }
+
+    fun setshowRemoveExercise(value: Boolean) {
+        _showRemoveExerciseFlow.value = value
+    }
+
+    fun setExercise(exercise: ExerciseListBean.Data?) {
         viewModelScope.launch(Dispatchers.IO) {
             _apiState.emit(ValidationState.Ideal)
             if (exercise != null) {
@@ -178,45 +194,54 @@ class ExerciseAddViewModel @Inject constructor(
     }
 
     private fun setData() {
-      /*  if (checkString(_selectedExercise.value.title, isempty = true).isNotEmpty()) {
-            setTitle(checkString(_selectedExercise.value.title, isempty = true))
+        if (checkString(_selectedExercise.value.name, isempty = true).isNotEmpty()) {
+            setName(checkString(_selectedExercise.value.name, isempty = true))
         }
 
-        if (checkString(_selectedExercise.value.total_time, isempty = true).isNotEmpty()) {
-            setTotalTime(checkString(_selectedExercise.value.total_time, isempty = true))
+        if (checkString(_selectedExercise.value.duration, isempty = true).isNotEmpty()) {
+            setDuration(checkString(_selectedExercise.value.duration, isempty = true))
         }
 
-        if (checkString(_selectedExercise.value.user_time, isempty = true).isNotEmpty()) {
-            setUserTime(checkString(_selectedExercise.value.user_time, isempty = true))
+        if (checkString(_selectedExercise.value.bodypart, isempty = true).isNotEmpty()) {
+            setBodyPart(checkString(_selectedExercise.value.bodypart, isempty = true))
         }
 
-        if (checkString(_selectedExercise.value.heartrate_max, isempty = true).isNotEmpty()) {
-            setHeartrateMax(checkString(_selectedExercise.value.heartrate_max, isempty = true))
+        if (checkString(_selectedExercise.value.equipment, isempty = true).isNotEmpty()) {
+            setEquipment(checkString(_selectedExercise.value.equipment, isempty = true))
         }
 
-        if (checkString(_selectedExercise.value.heartrate_min, isempty = true).isNotEmpty()) {
-            setHeartrateMin(checkString(_selectedExercise.value.heartrate_min, isempty = true))
+        if (checkString(_selectedExercise.value.gifurl, isempty = true).isNotEmpty()) {
+            setGifurl(checkString(_selectedExercise.value.gifurl, isempty = true))
         }
 
-        if (checkString(_selectedExercise.value.stress, isempty = true).isNotEmpty()) {
-            setStress(checkString(_selectedExercise.value.stress, isempty = true))
+        if (checkString(_selectedExercise.value.reps, isempty = true).isNotEmpty()) {
+            setReps(checkString(_selectedExercise.value.reps, isempty = true))
         }
 
-        if (checkString(_selectedExercise.value.spo2, isempty = true).isNotEmpty()) {
-            setSpo2(checkString(_selectedExercise.value.spo2, isempty = true))
+        if (checkString(
+                _selectedExercise.value.rest_after_completion,
+                isempty = true
+            ).isNotEmpty()
+        ) {
+            setRestAfterCompletion(
+                checkString(
+                    _selectedExercise.value.rest_after_completion,
+                    isempty = true
+                )
+            )
         }
 
-        if (checkString(_selectedExercise.value.calorie, isempty = true).isNotEmpty()) {
-            setCalorie(checkString(_selectedExercise.value.calorie, isempty = true))
+        if (checkString(_selectedExercise.value.rests, isempty = true).isNotEmpty()) {
+            setRests(checkString(_selectedExercise.value.rests, isempty = true))
         }
 
-        if (checkString(_selectedExercise.value.music_url, isempty = true).isNotEmpty()) {
-            setMusicUrl(checkString(_selectedExercise.value.music_url, isempty = true))
+        if (checkString(_selectedExercise.value.sets, isempty = true).isNotEmpty()) {
+            setSets(checkString(_selectedExercise.value.sets, isempty = true))
         }
 
-        if (checkString(_selectedExercise.value.image_url, isempty = true).isNotEmpty()) {
-            setImageUrl(checkString(_selectedExercise.value.image_url, isempty = true))
-        }*/
+        if (checkString(_selectedExercise.value.target, isempty = true).isNotEmpty()) {
+            setTarget(checkString(_selectedExercise.value.target, isempty = true))
+        }
     }
 
 
@@ -272,13 +297,25 @@ class ExerciseAddViewModel @Inject constructor(
         if (_nameInputFlow.value.isEmpty() ||
             _durationInputFlow.value.isEmpty() ||
             _bodypartInputFlow.value.isEmpty() ||
-            _imageurlInputFlow.value.isEmpty()
+            _equipmentInputFlow.value.isEmpty() ||
+            _gifurlInputFlow.value.isEmpty() ||
+            _repsInputFlow.value.isEmpty() ||
+            _restAfterCompletionInputFlow.value.isEmpty() ||
+            _restsInputFlow.value.isEmpty() ||
+            _setsInputFlow.value.isEmpty() ||
+            _targetInputFlow.value.isEmpty()
         ) {
             _isvalidation = true
             _nameInputErrorFlow.value = _nameInputFlow.value.isEmpty()
             _durationInputErrorFlow.value = _durationInputFlow.value.isEmpty()
             _bodypartInputErrorFlow.value = _bodypartInputFlow.value.isEmpty()
-            _imageurlInputErrorFlow.value = _imageurlInputFlow.value.isEmpty()
+            _equipmentInputErrorFlow.value = _equipmentInputFlow.value.isEmpty()
+            _gifurlInputErrorFlow.value = _gifurlInputFlow.value.isEmpty()
+            _repsInputErrorFlow.value = _repsInputFlow.value.isEmpty()
+            _restAfterCompletionInputErrorFlow.value = _restAfterCompletionInputFlow.value.isEmpty()
+            _restsInputErrorFlow.value = _restsInputFlow.value.isEmpty()
+            _setsInputErrorFlow.value = _setsInputFlow.value.isEmpty()
+            _targetInputErrorFlow.value = _targetInputFlow.value.isEmpty()
 
             viewModelScope.launch(Dispatchers.Default) {
                 _apiState.emit(ValidationState.Error("validation", "Please fill all the fields"))
@@ -287,16 +324,16 @@ class ExerciseAddViewModel @Inject constructor(
             _isvalidation = false
             val data = HashMap<String?, Any?>()
             data["id"] = _selectedExercise.value.id
-            data["title"] = _nameInputFlow.value
-            data["total_time"] = _durationInputFlow.value
-            data["user_time"] = _bodypartInputFlow.value
-            data["heartrate_max"] = _heartrateMaxInputFlow.value
-            data["heartrate_min"] = _heartrateMinInputFlow.value
-            data["stress"] = _stressInputFlow.value
-            data["spo2"] = _spo2InputFlow.value
-            data["calorie"] = _calorieInputFlow.value
-            data["music_url"] = _musicurlInputFlow.value
-            data["image_url"] = _imageurlInputFlow.value
+            data["name"] = _nameInputFlow.value
+            data["duration"] = _durationInputFlow.value
+            data["bodypart"] = _bodypartInputFlow.value
+            data["target"] = _targetInputFlow.value
+            data["equipment"] = _equipmentInputFlow.value
+            data["gifurl"] = _gifurlInputFlow.value
+            data["sets"] = _setsInputFlow.value
+            data["reps"] = _repsInputFlow.value
+            data["rests"] = _restsInputFlow.value
+            data["rest_after_completion"] = _restAfterCompletionInputFlow.value
             addExercise(data)
         }
     }

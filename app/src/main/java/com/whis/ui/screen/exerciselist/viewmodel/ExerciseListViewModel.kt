@@ -11,6 +11,7 @@ import com.whis.model.ExerciseListBean
 import com.whis.model.ExerciseRemoveBean
 import com.whis.repository.ExerciseListRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -30,12 +31,17 @@ class ExerciseListViewModel @Inject constructor(
     private val _apiState = MutableSharedFlow<ValidationState>()
     val apiState = _apiState.asSharedFlow()
 
-    private val _exerciseListFlow =
-        MutableStateFlow<SnapshotStateList<ExerciseListBean.Data>>(mutableStateListOf())
-    val exerciseList = _exerciseListFlow.asStateFlow()
+    private var exerciseList: List<ExerciseListBean.Data?> = arrayListOf()
+
+    private val _exercisesSearchFlow =
+        MutableStateFlow<SnapshotStateList<ExerciseListBean.Data?>>(mutableStateListOf())
+    val exercisesSearch = _exercisesSearchFlow.asStateFlow()
 
     private val _showRemoveExerciseFlow = MutableStateFlow<ExerciseListBean.Data?>(null)
     val showRemoveExercise = _showRemoveExerciseFlow.asStateFlow()
+
+    private val _searchInputFlow = MutableStateFlow("")
+    val searchInputFlow = _searchInputFlow.asStateFlow()
 
     init {
         getExercise()
@@ -54,7 +60,7 @@ class ExerciseListViewModel @Inject constructor(
                 exerciseListRepository.getExerciseList(data).collect { resp ->
                     when (resp) {
                         is ApiResp.Loading -> {
-                            if (_exerciseListFlow.value.isEmpty()) {
+                            if (exerciseList.isEmpty()) {
                                 _showLoadingFlow.value = true
                                 _apiState.emit(ValidationState.Loading(tag, true))
                             }
@@ -64,54 +70,59 @@ class ExerciseListViewModel @Inject constructor(
                             _showLoadingFlow.value = false
                             _apiState.emit(ValidationState.Loading(tag, false))
                             _apiState.emit(ValidationState.Error(tag, resp.message))
-                            _exerciseListFlow.value = mutableStateListOf()
+                            exerciseList = arrayListOf()
+                            _exercisesSearchFlow.value = mutableStateListOf()
                         }
 
                         is ApiResp.Success -> {
                             val respData = resp.item as ExerciseListBean
-                            if (_exerciseListFlow.value.isEmpty()) {
+                            if (exerciseList.isEmpty()) {
                                 _showLoadingFlow.value = false
                                 _apiState.emit(ValidationState.Loading(tag, false))
-                                _exerciseListFlow.value = respData.data!!.toMutableStateList()
+                                _exercisesSearchFlow.value = respData.data!!.toMutableStateList()
+                                exerciseList = respData.data!!
                             } else {
                                 val addList = arrayListOf<ExerciseListBean.Data>()
                                 for (item in respData.data!!) {
                                     val findItem =
-                                        _exerciseListFlow.value.find { it.id == item.id }
+                                        exerciseList.find { it!!.id == item.id }
                                     if (findItem == null) {
                                         addList.add(item)
                                     }
                                 }
 
                                 val removeList = arrayListOf<ExerciseListBean.Data>()
-                                for (item in _exerciseListFlow.value) {
+                                for (item in exerciseList) {
                                     val findItem =
-                                        respData.data!!.find { it.id == item.id }
+                                        respData.data!!.find { it.id == item!!.id }
                                     if (findItem == null) {
-                                        removeList.add(item)
+                                        removeList.add(item!!)
                                     }
                                 }
                                 val changeList = arrayListOf<ExerciseListBean.Data>()
                                 for (item in respData.data!!) {
                                     val findItem =
-                                        _exerciseListFlow.value.find { it.id == item.id }
+                                        exerciseList.find { it!!.id == item.id }
                                     if (findItem != null) {
                                         if (item != findItem) {
                                             changeList.add(item)
                                         }
                                     }
                                 }
-
-                                _exerciseListFlow.update {
-                                    it.removeAll(removeList)
-                                    it.addAll(addList)
-                                    if (changeList.size > 0) {
-                                        for (item in changeList) {
-                                            val findItem = it.find { it.id == item.id }
-                                            it.set(it.indexOf(findItem), item)
+                                if(_searchInputFlow.value.isEmpty()){
+                                    _exercisesSearchFlow.update {
+                                        it.removeAll(removeList)
+                                        it.addAll(addList)
+                                        if (changeList.size > 0) {
+                                            for (item in changeList) {
+                                                val findItem = it.find { it!!.id == item.id }
+                                                it.set(it.indexOf(findItem), item)
+                                            }
                                         }
+                                        it
                                     }
-                                    it
+                                }else{
+                                    setSearch(_searchInputFlow.value)
                                 }
                             }
                         }
@@ -122,6 +133,23 @@ class ExerciseListViewModel @Inject constructor(
             }
         }
     }
+
+    fun setSearch(it: String) {
+        _searchInputFlow.value = it
+        //viewModelScope.launch(Dispatchers.Default) {
+            if (it.isNotEmpty()) {
+                _exercisesSearchFlow.value = exerciseList.filter { item ->
+                    item!!.name!!.trim().contains(it, ignoreCase = true)
+                            || item.bodypart!!.trim().contains(it, ignoreCase = true)
+                            || item.equipment!!.trim().contains(it, ignoreCase = true)
+                            || item.target!!.trim().contains(it, ignoreCase = true)
+                }.toMutableStateList()
+            } else {
+                _exercisesSearchFlow.value = exerciseList.toMutableStateList()
+            }
+        //}
+    }
+
 
     fun removeWorkout(data: HashMap<String?, Any?>) {
         viewModelScope.launch {

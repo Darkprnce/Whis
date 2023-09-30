@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,6 +43,7 @@ import com.whis.routes.Screen
 import com.whis.ui.customComposables.CustomButton
 import com.whis.ui.customComposables.CustomDialog
 import com.whis.ui.customComposables.CustomText
+import com.whis.ui.customComposables.CustomTextField
 import com.whis.ui.customComposables.GifImage
 import com.whis.ui.customComposables.MyScaffold
 import com.whis.ui.customComposables.ShimmerListItem
@@ -90,9 +92,10 @@ fun ExerciseListScreen(
         }
     }
 
-    val workouts by exerciseListViewModel.exerciseList.collectAsStateWithLifecycle()
+    val exercises by exerciseListViewModel.exercisesSearch.collectAsStateWithLifecycle()
     val showListLoading by exerciseListViewModel.showLoading.collectAsStateWithLifecycle()
     val showRemoveWorkout by exerciseListViewModel.showRemoveExercise.collectAsStateWithLifecycle()
+    val search by exerciseListViewModel.searchInputFlow.collectAsStateWithLifecycle()
 
     MyScaffold(
         title = "Exercise List",
@@ -154,17 +157,36 @@ fun ExerciseListScreen(
                 }
             }
 
+            CustomTextField(
+                title = stringResource(R.string.search),
+                value = search,
+                onValueChange = {
+                    exerciseListViewModel.setSearch(it)
+                },
+                starticon = {
+                    IconButton(onClick = { }) {
+                        Icon(
+                            imageVector = Icons.Outlined.Search,
+                            contentDescription = stringResource(R.string.search),
+                        )
+                    }
+                },
+                modifier = modifier
+                    .fillMaxWidth()
+                    .padding(top = 5.dp, start = 5.dp, end = 5.dp)
+            )
+
             ShimmerListItem(
                 isLoading = showListLoading,
                 contentAfterLoading = {
-                    if (workouts.isNotEmpty()) {
+                    if (exercises.isNotEmpty()) {
                         LazyColumn(modifier = Modifier.fillMaxSize()) {
                             items(
-                                workouts,
-                                key = { item -> "exercise_${item.id!!}" }) { item ->
+                                exercises,
+                                key = { item -> "exercise_${item!!.id!!}" }) { item ->
                                 ExerciseItem(
                                     modifier = modifier,
-                                    item = item,
+                                    item = item!!,
                                     onClick = {
                                         sharedViewModel.setExercise(item)
                                         navHostController.navigate(Screen.ExerciseEdit.route)

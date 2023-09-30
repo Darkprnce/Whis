@@ -39,6 +39,7 @@ fun MyScaffold(
     title: String?=null,
     navHostController: NavHostController,
     isbackAvailable: Boolean = true,
+    showConnectivity:Boolean = true,
     onBackClick: (() -> Unit)? = null,
     snackBarState: SnackbarHostState = remember { SnackbarHostState() },
     actions: @Composable (RowScope.() -> Unit)? = null,
@@ -94,7 +95,9 @@ fun MyScaffold(
                     .padding(padding)
                     .imePadding()
             ) {
-                ConnectivityStatus(isConnected)
+                if(showConnectivity){
+                    ConnectivityStatus(isConnected)
+                }
                 content(snackBarState)
             }
         }, bottomBar = { bottomBar?.invoke() })
