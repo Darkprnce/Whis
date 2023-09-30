@@ -11,7 +11,6 @@ import com.whis.model.ExerciseListBean
 import com.whis.model.ExerciseRemoveBean
 import com.whis.repository.ExerciseListRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -31,7 +30,7 @@ class ExerciseListViewModel @Inject constructor(
     private val _apiState = MutableSharedFlow<ValidationState>()
     val apiState = _apiState.asSharedFlow()
 
-    private var exerciseList: List<ExerciseListBean.Data?> = arrayListOf()
+    private var exerciseList: MutableList<ExerciseListBean.Data?> = mutableListOf()
 
     private val _exercisesSearchFlow =
         MutableStateFlow<SnapshotStateList<ExerciseListBean.Data?>>(mutableStateListOf())
@@ -47,7 +46,7 @@ class ExerciseListViewModel @Inject constructor(
         getExercise()
     }
 
-    fun setshowRemoveWorkout(value: ExerciseListBean.Data?) {
+    fun setshowRemoveExercise(value: ExerciseListBean.Data?) {
         _showRemoveExerciseFlow.value = value
     }
 
@@ -70,7 +69,7 @@ class ExerciseListViewModel @Inject constructor(
                             _showLoadingFlow.value = false
                             _apiState.emit(ValidationState.Loading(tag, false))
                             _apiState.emit(ValidationState.Error(tag, resp.message))
-                            exerciseList = arrayListOf()
+                            exerciseList = mutableListOf()
                             _exercisesSearchFlow.value = mutableStateListOf()
                         }
 
@@ -80,7 +79,7 @@ class ExerciseListViewModel @Inject constructor(
                                 _showLoadingFlow.value = false
                                 _apiState.emit(ValidationState.Loading(tag, false))
                                 _exercisesSearchFlow.value = respData.data!!.toMutableStateList()
-                                exerciseList = respData.data!!
+                                exerciseList = respData.data!!.toMutableList()
                             } else {
                                 val addList = arrayListOf<ExerciseListBean.Data>()
                                 for (item in respData.data!!) {
@@ -109,6 +108,15 @@ class ExerciseListViewModel @Inject constructor(
                                         }
                                     }
                                 }
+                                exerciseList.removeAll(removeList)
+                                exerciseList.addAll(addList)
+                                if (changeList.size > 0) {
+                                    for (item in changeList) {
+                                        val findItem = exerciseList.find { it!!.id == item.id }
+                                        exerciseList[exerciseList.indexOf(findItem)] = item
+                                    }
+                                }
+
                                 if(_searchInputFlow.value.isEmpty()){
                                     _exercisesSearchFlow.update {
                                         it.removeAll(removeList)
@@ -116,7 +124,7 @@ class ExerciseListViewModel @Inject constructor(
                                         if (changeList.size > 0) {
                                             for (item in changeList) {
                                                 val findItem = it.find { it!!.id == item.id }
-                                                it.set(it.indexOf(findItem), item)
+                                                it[it.indexOf(findItem)] = item
                                             }
                                         }
                                         it
@@ -168,12 +176,8 @@ class ExerciseListViewModel @Inject constructor(
                     is ApiResp.Success -> {
                         val respData = resp.item as ExerciseRemoveBean
                         _apiState.emit(ValidationState.Loading(tag, false))
-                        if (respData.status.equals("success")) {
-                            _apiState.emit(ValidationState.Success(tag, respData.msg!!))
-                            getExercise()
-                        } else {
-                            _apiState.emit(ValidationState.Error(tag, respData.msg!!))
-                        }
+                        _apiState.emit(ValidationState.Success(tag, respData.msg!!))
+                        getExercise()
                     }
                 }
             }

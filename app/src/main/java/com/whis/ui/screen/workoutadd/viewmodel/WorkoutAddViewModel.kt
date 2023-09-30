@@ -94,6 +94,9 @@ class WorkoutAddViewModel @Inject constructor(
     private val _imageurlInputErrorFlow = MutableStateFlow(false)
     val imageurlInputErrorFlow = _imageurlInputErrorFlow.asStateFlow()
 
+    private val _isShowFlow = MutableStateFlow(true)
+    val isShowFlow = _isShowFlow.asStateFlow()
+
     private val _searchInputFlow = MutableStateFlow("")
     val searchInputFlow = _searchInputFlow.asStateFlow()
 
@@ -105,6 +108,8 @@ class WorkoutAddViewModel @Inject constructor(
 
     private val _showExerciseMoveFlow = MutableStateFlow(false)
     val showExerciseMove = _showExerciseMoveFlow.asStateFlow()
+
+
     private var _isvalidation = false
 
     fun setShowLoading(value: Boolean) {
@@ -161,6 +166,10 @@ class WorkoutAddViewModel @Inject constructor(
         if (_isvalidation) {
             _imageurlInputErrorFlow.value = value.isEmpty()
         }
+    }
+
+    fun setisShow(value: Boolean) {
+        _isShowFlow.value = value
     }
 
     fun setshowRemoveWorkout(value: Boolean) {
@@ -228,6 +237,14 @@ class WorkoutAddViewModel @Inject constructor(
         if (checkString(_selectedWorkout.value.image_url, isempty = true).isNotEmpty()) {
             setImageUrl(checkString(_selectedWorkout.value.image_url, isempty = true))
         }
+
+        if (checkString(_selectedWorkout.value.isshow, isempty = true).isNotEmpty()) {
+            if(_selectedWorkout.value.isshow.equals("true")){
+                setisShow(true)
+            }else{
+                setisShow(false)
+            }
+        }
     }
 
 
@@ -255,10 +272,13 @@ class WorkoutAddViewModel @Inject constructor(
                         _workoutExercisesFlow.value = mutableStateListOf()
                         if (_selectedWorkout.value.exercises_id != null) {
                             for (item in _selectedWorkout.value.exercises_id!!) {
-                                exerciseList.find { it!!.id == item!!.id }!!.selected = true
-                                _exercisesSearchFlow.value.find { it!!.id == item!!.id }!!.selected =
-                                    true
-                                _workoutExercisesFlow.value.add(exerciseList.find { it!!.id == item!!.id }!!)
+                                val findItem = exerciseList.find { it!!.id == item!!.id }
+                                if(findItem !=null){
+                                    exerciseList.find { it!!.id == item!!.id }!!.selected = true
+                                    _exercisesSearchFlow.value.find { it!!.id == item!!.id }!!.selected =
+                                        true
+                                    _workoutExercisesFlow.value.add(exerciseList.find { it!!.id == item!!.id }!!)
+                                }
                             }
                         }
                         _apiState.emit(ValidationState.Loading(tag, false))
@@ -395,6 +415,7 @@ class WorkoutAddViewModel @Inject constructor(
                 exerciseList.add(item.id.toString())
             }
             data["exercises_id"] = exerciseList
+            data["isshow"] = "${_isShowFlow.value}"
             addWorkout(data)
         }
     }

@@ -17,6 +17,7 @@ val WhiteSmoke = Color(0xFFD3D3D3)
 val Green = Color(0xFF4CAF50)
 val Blue = Color(0xFF2196F3)
 val Red = Color(0xFFF44336)
+val Pink = Color(0xFFFF958D)
 val AppHightlightColor = Color(0xFFFF9800)
 
 val TextFieldBackgroundColor = Color(0xFF34353E)

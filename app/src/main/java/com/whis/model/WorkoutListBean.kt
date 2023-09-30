@@ -18,7 +18,8 @@ data class WorkoutListBean(
         var stress: String? = null,
         var title: String? = null,
         var total_time: String? = null,
-        var user_time: String? = null
+        var user_time: String? = null,
+        var isshow: String? = null
     ) {
         data class ExercisesId(
             var bodypart: String? = null,
@@ -31,7 +32,8 @@ data class WorkoutListBean(
             var rest_after_completion: String? = null,
             var rests: String? = null,
             var sets: String? = null,
-            var target: String? = null
+            var target: String? = null,
+            var isshow: String? = null,
         )
     }
 }

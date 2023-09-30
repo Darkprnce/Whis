@@ -22,11 +22,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -45,7 +44,7 @@ import com.whis.ui.customComposables.CustomDialog
 import com.whis.ui.customComposables.CustomText
 import com.whis.ui.customComposables.CustomTextField
 import com.whis.ui.customComposables.GifImage
-import com.whis.ui.customComposables.MyScaffold
+import com.whis.ui.customComposables.MyToolbar
 import com.whis.ui.customComposables.ShimmerListItem
 import com.whis.ui.screen.SharedViewModel
 import com.whis.ui.screen.exerciselist.viewmodel.ExerciseListViewModel
@@ -58,13 +57,11 @@ fun ExerciseListScreen(
     modifier: Modifier = Modifier,
     exerciseListViewModel: ExerciseListViewModel = hiltViewModel(),
     navHostController: NavHostController,
+    snackBarState: SnackbarHostState,
     sharedViewModel: SharedViewModel,
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val snackBarHostState = remember { SnackbarHostState() }
-
-    val refresh by sharedViewModel.isrefresh.collectAsStateWithLifecycle()
+    val refresh by sharedViewModel.isRefresh.collectAsStateWithLifecycle()
 
     LaunchedEffect(key1 = Unit) {
         if (refresh) {
@@ -76,7 +73,7 @@ fun ExerciseListScreen(
                 }
 
                 is ValidationState.Error -> {
-                    snackBarHostState.showSnackbar(
+                    snackBarState.showSnackbar(
                         message = apiState.errorMsg,
                         duration = SnackbarDuration.Short
                     )
@@ -97,124 +94,127 @@ fun ExerciseListScreen(
     val showRemoveWorkout by exerciseListViewModel.showRemoveExercise.collectAsStateWithLifecycle()
     val search by exerciseListViewModel.searchInputFlow.collectAsStateWithLifecycle()
 
-    MyScaffold(
-        title = "Exercise List",
-        isbackAvailable = false,
-        navHostController = navHostController,
-        snackBarState = snackBarHostState,
-        actions = {
-            IconButton(onClick = {
-                sharedViewModel.setWorkout(null)
-                navHostController.navigate(Screen.ExerciseEdit.route)
-            }) {
-                Icon(
-                    Icons.Filled.Add,
-                    "add_icon",
-                    tint = White
+    Column(
+        modifier = Modifier
+    ) {
+        MyToolbar(
+            title = "Exercise List",
+            isbackAvailable = false,
+            navHostController = navHostController,
+            actions = {
+                IconButton(onClick = {
+                    sharedViewModel.setExercise(null)
+                    navHostController.navigate(Screen.ExerciseEdit.route)
+                }) {
+                    Icon(
+                        Icons.Filled.Add,
+                        "add_icon",
+                        tint = White
+                    )
+                }
+            },
+        )
+
+        if (showRemoveWorkout != null) {
+            CustomDialog(
+                onDismissRequest = {
+                    exerciseListViewModel.setshowRemoveExercise(null)
+                }
+            ) {
+                CustomText(
+                    value = "${stringResource(id = R.string.remove_btn)} ${showRemoveWorkout!!.name}",
+                    isheading = true,
+                    txtsize = 18.sp,
+                    modifier = modifier.align(Alignment.Start)
                 )
+                CustomText(
+                    value = stringResource(R.string.do_you_want_to_remove_this_exercise),
+                    modifier = modifier.align(Alignment.Start)
+                )
+                Row {
+                    CustomButton(
+                        value = stringResource(R.string.cancel_btn),
+                        bgcolor = Red,
+                        onClick = {
+                            exerciseListViewModel.setshowRemoveExercise(null)
+                        }, modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1.0f)
+                    )
+                    Spacer(modifier = Modifier.weight(0.1f))
+                    CustomButton(
+                        value = stringResource(R.string.remove_btn),
+                        bgcolor = Green, onClick = {
+                            exerciseListViewModel.setshowRemoveExercise(null)
+                            val data = HashMap<String?, Any?>()
+                            data["id"] = showRemoveWorkout!!.id
+                            exerciseListViewModel.removeWorkout(data)
+                        }, modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1.0f)
+                    )
+                }
             }
-        },
-        content = { _ ->
-            if (showRemoveWorkout != null) {
-                CustomDialog(
-                    onDismissRequest = {
-                        exerciseListViewModel.setshowRemoveWorkout(null)
+        }
+
+        CustomTextField(
+            title = stringResource(R.string.search),
+            value = search,
+            onValueChange = {
+                exerciseListViewModel.setSearch(it)
+            },
+            starticon = {
+                IconButton(onClick = { }) {
+                    Icon(
+                        imageVector = Icons.Outlined.Search,
+                        contentDescription = stringResource(R.string.search),
+                    )
+                }
+            },
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(top = 5.dp, start = 5.dp, end = 5.dp)
+        )
+
+        ShimmerListItem(
+            isLoading = showListLoading,
+            contentAfterLoading = {
+                if (exercises.isNotEmpty()) {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(
+                            exercises,
+                            key = { item -> "exercise_${item!!.id!!}" }) { item ->
+                            ExerciseItem(
+                                modifier = modifier,
+                                item = item!!,
+                                onClick = {
+                                    sharedViewModel.setExercise(item)
+                                    navHostController.navigate(Screen.ExerciseEdit.route)
+                                }, onLongClick = {
+                                    exerciseListViewModel.setshowRemoveExercise(item)
+                                }
+                            )
+                        }
                     }
-                ) {
-                    CustomText(
-                        value = "${stringResource(id = R.string.remove_btn)} ${showRemoveWorkout!!.name}",
-                        isheading = true,
-                        txtsize = 18.sp,
-                        modifier = modifier.align(Alignment.Start)
-                    )
-                    CustomText(
-                        value = stringResource(R.string.do_you_want_to_remove_this_exercise),
-                        modifier = modifier.align(Alignment.Start)
-                    )
-                    Row {
-                        CustomButton(
-                            value = stringResource(R.string.cancel_btn),
-                            bgcolor = Red,
-                            onClick = {
-                                exerciseListViewModel.setshowRemoveWorkout(null)
-                            }, modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1.0f)
+                } else {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        GifImage(
+                            imageUrl = R.drawable.no_record_icon,
+                            modifier = modifier.height(250.dp)
                         )
-                        Spacer(modifier = Modifier.weight(0.1f))
-                        CustomButton(
-                            value = stringResource(R.string.remove_btn),
-                            bgcolor = Green, onClick = {
-                                exerciseListViewModel.setshowRemoveWorkout(null)
-                                val data = HashMap<String?, Any?>()
-                                data.put("id", showRemoveWorkout!!.id)
-                                exerciseListViewModel.removeWorkout(data)
-                            }, modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(1.0f)
+                        CustomText(
+                            value = stringResource(R.string.no_exercises),
+                            isheading = true,
+                            txtsize = 18.sp,
+                            modifier = modifier.padding(top = 10.dp)
                         )
                     }
                 }
-            }
-
-            CustomTextField(
-                title = stringResource(R.string.search),
-                value = search,
-                onValueChange = {
-                    exerciseListViewModel.setSearch(it)
-                },
-                starticon = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Search,
-                            contentDescription = stringResource(R.string.search),
-                        )
-                    }
-                },
-                modifier = modifier
-                    .fillMaxWidth()
-                    .padding(top = 5.dp, start = 5.dp, end = 5.dp)
-            )
-
-            ShimmerListItem(
-                isLoading = showListLoading,
-                contentAfterLoading = {
-                    if (exercises.isNotEmpty()) {
-                        LazyColumn(modifier = Modifier.fillMaxSize()) {
-                            items(
-                                exercises,
-                                key = { item -> "exercise_${item!!.id!!}" }) { item ->
-                                ExerciseItem(
-                                    modifier = modifier,
-                                    item = item!!,
-                                    onClick = {
-                                        sharedViewModel.setExercise(item)
-                                        navHostController.navigate(Screen.ExerciseEdit.route)
-                                    }, onLongClick = {
-                                        exerciseListViewModel.setshowRemoveWorkout(item)
-                                    }
-                                )
-                            }
-                        }
-                    } else {
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            GifImage(
-                                imageUrl = R.drawable.no_record_icon,
-                                modifier = modifier.height(250.dp)
-                            )
-                            CustomText(
-                                value = stringResource(R.string.no_exercises),
-                                isheading = true,
-                                txtsize = 18.sp,
-                                modifier = modifier.padding(top = 10.dp)
-                            )
-                        }
-                    }
-                })
-        })
+            })
+    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -239,7 +239,11 @@ fun ExerciseItem(
                     .width(80.dp)
             )
             CustomText(
-                item.name!!, modifier = modifier
+                item.name!!, color = if (item.isshow.equals("false")) {
+                    Red
+                } else {
+                    null
+                }, modifier = modifier
                     .fillMaxWidth()
                     .padding(10.dp)
                     .weight(1f)

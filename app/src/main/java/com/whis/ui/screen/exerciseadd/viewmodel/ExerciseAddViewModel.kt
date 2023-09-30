@@ -98,6 +98,9 @@ class ExerciseAddViewModel @Inject constructor(
     private val _targetInputErrorFlow = MutableStateFlow(false)
     val targetInputErrorFlow = _targetInputErrorFlow.asStateFlow()
 
+    private val _isShowFlow = MutableStateFlow(true)
+    val isShowFlow = _isShowFlow.asStateFlow()
+
     private val _showRemoveExerciseFlow = MutableStateFlow(false)
     val showRemoveExerciseFlow = _showRemoveExerciseFlow.asStateFlow()
 
@@ -177,6 +180,9 @@ class ExerciseAddViewModel @Inject constructor(
         }
     }
 
+    fun setisShow(value: Boolean) {
+        _isShowFlow.value = value
+    }
     fun setshowRemoveExercise(value: Boolean) {
         _showRemoveExerciseFlow.value = value
     }
@@ -241,6 +247,14 @@ class ExerciseAddViewModel @Inject constructor(
 
         if (checkString(_selectedExercise.value.target, isempty = true).isNotEmpty()) {
             setTarget(checkString(_selectedExercise.value.target, isempty = true))
+        }
+
+        if (checkString(_selectedExercise.value.isshow, isempty = true).isNotEmpty()) {
+            if(_selectedExercise.value.isshow.equals("true")){
+                setisShow(true)
+            }else{
+                setisShow(false)
+            }
         }
     }
 
@@ -334,6 +348,7 @@ class ExerciseAddViewModel @Inject constructor(
             data["reps"] = _repsInputFlow.value
             data["rests"] = _restsInputFlow.value
             data["rest_after_completion"] = _restAfterCompletionInputFlow.value
+            data["isshow"] = "${_isShowFlow.value}"
             addExercise(data)
         }
     }

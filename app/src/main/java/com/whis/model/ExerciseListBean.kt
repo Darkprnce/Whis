@@ -18,6 +18,7 @@ data class ExerciseListBean(
         var rests: Int? = null,
         var sets: Int? = null,
         var target: String? = null,
+        var isshow: String? = null,
         var selected: Boolean = false
     )
 }

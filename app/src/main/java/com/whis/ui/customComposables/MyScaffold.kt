@@ -32,17 +32,13 @@ import com.whis.model.BottomNavigationItem
 import com.whis.ui.theme.White
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalCoroutinesApi::class)
+@OptIn( ExperimentalCoroutinesApi::class)
 @Composable
 fun MyScaffold(
     modifier: Modifier = Modifier,
-    title: String?=null,
-    navHostController: NavHostController,
-    isbackAvailable: Boolean = true,
     showConnectivity:Boolean = true,
-    onBackClick: (() -> Unit)? = null,
+    navHostController: NavHostController,
     snackBarState: SnackbarHostState = remember { SnackbarHostState() },
-    actions: @Composable (RowScope.() -> Unit)? = null,
     content: @Composable (SnackbarHostState) -> Unit,
     bottomBar: @Composable (() -> Unit)? = null,
 ) {
@@ -52,42 +48,6 @@ fun MyScaffold(
 
     Scaffold(
         modifier = modifier,
-        topBar = {
-            if(title !=null || isbackAvailable || actions !=null){
-                TopAppBar(
-                    title = {
-                        if(title !=null){
-                            CustomText(title, isbold = true, color = White, txtsize = 16.sp)
-                        }
-                    },
-                    navigationIcon = {
-                        if (isbackAvailable) {
-                            IconButton(onClick = {
-                                if (onBackClick != null) {
-                                    onBackClick()
-                                } else {
-                                    navHostController.popBackStack()
-                                }
-                            }) {
-                                Icon(
-                                    Icons.Filled.KeyboardArrowLeft,
-                                    "back_icon",
-                                    tint = White
-                                )
-                            }
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                    ),
-                    actions = {
-                        if (actions != null) {
-                            actions()
-                        }
-                    }
-                )
-            }
-        },
         snackbarHost = { SnackbarHost(hostState = snackBarState) },
         content = { padding ->
             Column(

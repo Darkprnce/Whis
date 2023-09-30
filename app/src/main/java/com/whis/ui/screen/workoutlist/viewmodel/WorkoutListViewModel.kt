@@ -140,12 +140,8 @@ class WorkoutListViewModel @Inject constructor(
                     is ApiResp.Success -> {
                         val respData = resp.item as WorkoutRemoveBean
                         _apiState.emit(ValidationState.Loading(tag, false))
-                        if (respData.status.equals("success")) {
-                            _apiState.emit(ValidationState.Success(tag, respData.msg!!))
-                            getWorkouts()
-                        } else {
-                            _apiState.emit(ValidationState.Error(tag, respData.msg!!))
-                        }
+                        _apiState.emit(ValidationState.Success(tag, respData.msg!!))
+                        getWorkouts()
                     }
                 }
             }

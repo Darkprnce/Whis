@@ -34,12 +34,14 @@ import androidx.navigation.NavHostController
 import com.whis.Network.sealed.ValidationState
 import com.whis.R
 import com.whis.ui.customComposables.CustomButton
+import com.whis.ui.customComposables.CustomCheckBox
 import com.whis.ui.customComposables.CustomDialog
 import com.whis.ui.customComposables.CustomText
 import com.whis.ui.customComposables.CustomTextField
 import com.whis.ui.customComposables.GifImage
 import com.whis.ui.customComposables.LoadingDialog
 import com.whis.ui.customComposables.MyScaffold
+import com.whis.ui.customComposables.MyToolbar
 import com.whis.ui.screen.SharedViewModel
 import com.whis.ui.screen.exerciseadd.viewmodel.ExerciseAddViewModel
 import com.whis.ui.theme.Green
@@ -53,54 +55,56 @@ fun ExerciseAddScreen(
     modifier: Modifier = Modifier,
     exerciseAddViewModel: ExerciseAddViewModel = hiltViewModel(),
     navHostController: NavHostController,
+    snackBarState: SnackbarHostState,
     sharedViewModel: SharedViewModel,
 ) {
     val context = LocalContext.current
-    val coroutineScope = rememberCoroutineScope()
-    val snackBarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(key1 = Unit) {
-        exerciseAddViewModel.setExercise(sharedViewModel.selectedExercise)
-
-        exerciseAddViewModel.apiState.collect { apiState ->
-            when (apiState) {
-                is ValidationState.Loading -> {
-                    if (apiState.isLoading) {
-                        exerciseAddViewModel.setShowLoading(true)
-                    } else {
-                        exerciseAddViewModel.setShowLoading(false)
+        launch {
+            sharedViewModel.selectedExercise.collect {
+                exerciseAddViewModel.setExercise(it)
+            }
+        }
+        launch {
+            exerciseAddViewModel.apiState.collect { apiState ->
+                when (apiState) {
+                    is ValidationState.Loading -> {
+                        if (apiState.isLoading) {
+                            exerciseAddViewModel.setShowLoading(true)
+                        } else {
+                            exerciseAddViewModel.setShowLoading(false)
+                        }
                     }
-                }
 
-                is ValidationState.Error -> {
-                    coroutineScope.launch {
-                        snackBarHostState.showSnackbar(
+                    is ValidationState.Error -> {
+                        snackBarState.showSnackbar(
                             message = apiState.errorMsg,
                             duration = SnackbarDuration.Short
                         )
                     }
-                }
 
-                is ValidationState.Ideal -> {
+                    is ValidationState.Ideal -> {
 
-                }
+                    }
 
-                is ValidationState.Success -> {
-                    Toast.makeText(
-                        context,
-                        apiState.data as String,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                    if (apiState.tag.equals("add_exercise") || apiState.tag.equals("remove_exercise")) {
-                        sharedViewModel.setRefresh(true)
-                        navHostController.navigateUp()
+                    is ValidationState.Success -> {
+                        Toast.makeText(
+                            context,
+                            apiState.data as String,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        if (apiState.tag.equals("add_exercise") || apiState.tag.equals("remove_exercise")) {
+                            sharedViewModel.setRefresh(true)
+                            navHostController.navigateUp()
+                        }
                     }
                 }
             }
         }
     }
-    val exercise by exerciseAddViewModel.selectedExercise.collectAsStateWithLifecycle()
 
+    val exercise by exerciseAddViewModel.selectedExercise.collectAsStateWithLifecycle()
     val showLoading by exerciseAddViewModel.showLoading.collectAsStateWithLifecycle()
     val name by exerciseAddViewModel.nameInputFlow.collectAsStateWithLifecycle()
     val nameError by exerciseAddViewModel.nameInputErrorFlow.collectAsStateWithLifecycle()
@@ -122,242 +126,256 @@ fun ExerciseAddScreen(
     val setsError by exerciseAddViewModel.setsInputErrorFlow.collectAsStateWithLifecycle()
     val target by exerciseAddViewModel.targetInputFlow.collectAsStateWithLifecycle()
     val targetError by exerciseAddViewModel.targetInputErrorFlow.collectAsStateWithLifecycle()
+    val isShow by exerciseAddViewModel.isShowFlow.collectAsStateWithLifecycle()
     val showRemoveExercise by exerciseAddViewModel.showRemoveExerciseFlow.collectAsStateWithLifecycle()
 
-    MyScaffold(title = if (checkString(exercise.name, isempty = true).isEmpty()) {
-        stringResource(R.string.add_exercise)
-    } else {
-        stringResource(R.string.edit_exercise)
-    }, navHostController = navHostController,
-        snackBarState = snackBarHostState,
-        actions = {
-            if (checkString(exercise.name, isempty = true).isNotEmpty()) {
-                IconButton(onClick = {
-                    exerciseAddViewModel.setshowRemoveExercise(true)
-                }) {
-                    Icon(
-                        Icons.Filled.Delete, stringResource(R.string.remove_icon), tint = White
-                    )
-                }
-            }
-        }, content = { _ ->
-            if (showLoading) {
-                LoadingDialog()
-            }
 
-            if (showRemoveExercise) {
-                CustomDialog(onDismissRequest = {
-                    exerciseAddViewModel.setshowRemoveExercise(false)
-                }) {
-                    CustomText(
-                        value = "${stringResource(R.string.remove_btn)} ${exercise.name}",
-                        isheading = true,
-                        txtsize = 18.sp,
-                        modifier = modifier.align(Alignment.Start)
-                    )
-                    CustomText(
-                        value = stringResource(R.string.do_you_want_to_remove_this_exercise),
-                        modifier = modifier.align(Alignment.Start)
-                    )
-                    Row {
-                        CustomButton(
-                            value = stringResource(R.string.cancel_btn), bgcolor = Red, onClick = {
-                                exerciseAddViewModel.setshowRemoveExercise(false)
-                            }, modifier = modifier
-                                .fillMaxWidth()
-                                .weight(1.0f)
-                        )
-                        Spacer(modifier = Modifier.weight(0.1f))
-                        CustomButton(
-                            value = stringResource(R.string.remove_btn),
-                            bgcolor = Green,
-                            onClick = {
-                                exerciseAddViewModel.setshowRemoveExercise(false)
-                                val data = HashMap<String?, Any?>()
-                                data.put("id", exercise.id)
-                                exerciseAddViewModel.removeExercise(data)
-                            },
-                            modifier = modifier
-                                .fillMaxWidth()
-                                .weight(1.0f)
+    Column(
+        modifier = Modifier
+    ) {
+        MyToolbar(
+            title = if (checkString(exercise.name, isempty = true).isEmpty()) {
+                stringResource(R.string.add_exercise)
+            } else {
+                stringResource(R.string.edit_exercise)
+            },
+            navHostController = navHostController,
+            actions = {
+                if (checkString(exercise.name, isempty = true).isNotEmpty()) {
+                    IconButton(onClick = {
+                        exerciseAddViewModel.setshowRemoveExercise(true)
+                    }) {
+                        Icon(
+                            Icons.Filled.Delete, stringResource(R.string.remove_icon), tint = White
                         )
                     }
-
                 }
-            }
+            },
+        )
 
-            Column(
+
+        if (showLoading) {
+            LoadingDialog()
+        }
+
+        if (showRemoveExercise) {
+            CustomDialog(onDismissRequest = {
+                exerciseAddViewModel.setshowRemoveExercise(false)
+            }) {
+                CustomText(
+                    value = "${stringResource(R.string.remove_btn)} ${exercise.name}",
+                    isheading = true,
+                    txtsize = 18.sp,
+                    modifier = modifier.align(Alignment.Start)
+                )
+                CustomText(
+                    value = stringResource(R.string.do_you_want_to_remove_this_exercise),
+                    modifier = modifier.align(Alignment.Start)
+                )
+                Row {
+                    CustomButton(
+                        value = stringResource(R.string.cancel_btn), bgcolor = Red, onClick = {
+                            exerciseAddViewModel.setshowRemoveExercise(false)
+                        }, modifier = modifier
+                            .fillMaxWidth()
+                            .weight(1.0f)
+                    )
+                    Spacer(modifier = Modifier.weight(0.1f))
+                    CustomButton(
+                        value = stringResource(R.string.remove_btn),
+                        bgcolor = Green,
+                        onClick = {
+                            exerciseAddViewModel.setshowRemoveExercise(false)
+                            val data = HashMap<String?, Any?>()
+                            data["id"] = exercise.id
+                            exerciseAddViewModel.removeExercise(data)
+                        },
+                        modifier = modifier
+                            .fillMaxWidth()
+                            .weight(1.0f)
+                    )
+                }
+
+            }
+        }
+
+        Column(
+            modifier = modifier
+                .verticalScroll(rememberScrollState())
+                .padding(10.dp)
+        ) {
+
+            CustomTextField(
+                title = stringResource(R.string.name), value = name, iserror = nameError,
+                onValueChange = {
+                    exerciseAddViewModel.setName(it)
+                },
+                isvalidate = true,
                 modifier = modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(10.dp)
-            ) {
-
+                    .fillMaxWidth()
+                    .padding(top = 5.dp),
+            )
+            Row {
                 CustomTextField(
-                    title = stringResource(R.string.name), value = name, iserror = nameError,
+                    title = stringResource(R.string.body_part),
+                    value = bodypart,
+                    iserror = bodypartError,
                     onValueChange = {
-                        exerciseAddViewModel.setName(it)
+                        exerciseAddViewModel.setBodyPart(it)
                     },
                     isvalidate = true,
                     modifier = modifier
                         .fillMaxWidth()
-                        .padding(top = 5.dp),
+                        .weight(1.0f)
                 )
-                Row {
-                    CustomTextField(
-                        title = stringResource(R.string.body_part),
-                        value = bodypart,
-                        iserror = bodypartError,
-                        isnumber = true,
-                        onValueChange = {
-                            exerciseAddViewModel.setBodyPart(it)
-                        },
-                        isvalidate = true,
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .weight(1.0f)
-                    )
-                    Spacer(modifier = Modifier.weight(0.05f))
-                    CustomTextField(
-                        title = stringResource(R.string.equipment),
-                        value = equipment,
-                        iserror = equipmentError,
-                        isnumber = true,
-                        onValueChange = {
-                            exerciseAddViewModel.setEquipment(it)
-                        },
-                        isvalidate = true,
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .weight(1.0f)
-                    )
-                }
-                Row {
-                    CustomTextField(
-                        title = stringResource(R.string.target),
-                        value = target,
-                        iserror = targetError,
-                        isnumber = true,
-                        onValueChange = {
-                            exerciseAddViewModel.setTarget(it)
-                        },
-                        isvalidate = true,
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .weight(1.0f)
-                    )
-                    Spacer(modifier = Modifier.weight(0.05f))
-                    CustomTextField(
-                        title = stringResource(R.string.duration),
-                        value = duration,
-                        iserror = durationError,
-                        isnumber = true,
-                        onValueChange = {
-                            exerciseAddViewModel.setDuration(it)
-                        },
-                        isvalidate = true,
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .weight(1.0f)
-                    )
-                }
-                Row {
-                    CustomTextField(
-                        title = stringResource(R.string.sets),
-                        value = sets,
-                        iserror = setsError,
-                        isnumber = true,
-                        isvalidate = true,
-                        onValueChange = {
-                            exerciseAddViewModel.setSets(it)
-                        },
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .weight(1.0f)
-                    )
-                    Spacer(modifier = Modifier.weight(0.05f))
-                    CustomTextField(
-                        title = stringResource(R.string.reps),
-                        value = reps,
-                        iserror = repsError,
-                        isnumber = true,
-                        isvalidate = true,
-                        onValueChange = {
-                            exerciseAddViewModel.setReps(it)
-                        },
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .weight(1.0f)
-                    )
-                }
-                Row {
-                    CustomTextField(
-                        title = stringResource(R.string.rest),
-                        value = rests,
-                        iserror = restsError,
-                        isnumber = true,
-                        isvalidate = true,
-                        onValueChange = {
-                            exerciseAddViewModel.setRests(it)
-                        },
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .weight(1.0f)
-                    )
-                    Spacer(modifier = Modifier.weight(0.05f))
-                    CustomTextField(
-                        title = stringResource(R.string.rest_after_completion),
-                        value = restAfterCompletion,
-                        iserror = restAfterCompletionError,
-                        isnumber = true,
-                        isvalidate = true,
-                        onValueChange = {
-                            exerciseAddViewModel.setRestAfterCompletion(it)
-                        },
-                        modifier = modifier
-                            .fillMaxWidth()
-                            .weight(1.0f)
-                    )
-                }
+                Spacer(modifier = Modifier.weight(0.05f))
                 CustomTextField(
-                    title = "Gif Url",
-                    value = gifurl,
-                    iserror = gifurlError,
-                    isLast = true,
+                    title = stringResource(R.string.equipment),
+                    value = equipment,
+                    iserror = equipmentError,
                     onValueChange = {
-                        exerciseAddViewModel.setGifurl(it)
+                        exerciseAddViewModel.setEquipment(it)
                     },
                     isvalidate = true,
                     modifier = modifier
                         .fillMaxWidth()
-
+                        .weight(1.0f)
                 )
-                GifImage(
-                    imageUrl = if (checkString(gifurl, isempty = true).isEmpty()) {
-                        R.drawable.placeholder
-                    } else {
-                        gifurl
-                    },
-                    tint = if (checkString(gifurl, isempty = true).isEmpty()) {
-                        MaterialTheme.colorScheme.onSurface
-                    } else {
-                        null
-                    },
-                    modifier = modifier
-                        .padding(top = 5.dp)
-                        .height(100.dp)
-                        .width(200.dp)
-                )
-
-                CustomButton(
-                    value = if (checkString(exercise.name, isempty = true).isEmpty()) {
-                        stringResource(R.string.add_exercise)
-                    } else {
-                        stringResource(R.string.edit_exercise)
-                    }, onClick = {
-                        exerciseAddViewModel.validateForm()
-                    }, modifier = modifier.fillMaxWidth()
-                )
-
             }
-        })
+            Row {
+                CustomTextField(
+                    title = stringResource(R.string.target),
+                    value = target,
+                    iserror = targetError,
+                    onValueChange = {
+                        exerciseAddViewModel.setTarget(it)
+                    },
+                    isvalidate = true,
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .weight(1.0f)
+                )
+                Spacer(modifier = Modifier.weight(0.05f))
+                CustomTextField(
+                    title = stringResource(R.string.duration),
+                    value = duration,
+                    iserror = durationError,
+                    isnumber = true,
+                    onValueChange = {
+                        exerciseAddViewModel.setDuration(it)
+                    },
+                    isvalidate = true,
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .weight(1.0f)
+                )
+            }
+            Row {
+                CustomTextField(
+                    title = stringResource(R.string.sets),
+                    value = sets,
+                    iserror = setsError,
+                    isnumber = true,
+                    isvalidate = true,
+                    onValueChange = {
+                        exerciseAddViewModel.setSets(it)
+                    },
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .weight(1.0f)
+                )
+                Spacer(modifier = Modifier.weight(0.05f))
+                CustomTextField(
+                    title = stringResource(R.string.reps),
+                    value = reps,
+                    iserror = repsError,
+                    isnumber = true,
+                    isvalidate = true,
+                    onValueChange = {
+                        exerciseAddViewModel.setReps(it)
+                    },
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .weight(1.0f)
+                )
+            }
+            Row {
+                CustomTextField(
+                    title = stringResource(R.string.rest),
+                    value = rests,
+                    iserror = restsError,
+                    isnumber = true,
+                    isvalidate = true,
+                    onValueChange = {
+                        exerciseAddViewModel.setRests(it)
+                    },
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .weight(1.0f)
+                )
+                Spacer(modifier = Modifier.weight(0.05f))
+                CustomTextField(
+                    title = stringResource(R.string.rest_after_completion),
+                    value = restAfterCompletion,
+                    iserror = restAfterCompletionError,
+                    isnumber = true,
+                    isvalidate = true,
+                    onValueChange = {
+                        exerciseAddViewModel.setRestAfterCompletion(it)
+                    },
+                    modifier = modifier
+                        .fillMaxWidth()
+                        .weight(1.0f)
+                )
+            }
+            CustomTextField(
+                title = "Gif Url",
+                value = gifurl,
+                iserror = gifurlError,
+                isLast = true,
+                onValueChange = {
+                    exerciseAddViewModel.setGifurl(it)
+                },
+                isvalidate = true,
+                modifier = modifier
+                    .fillMaxWidth()
+
+            )
+            GifImage(
+                imageUrl = if (checkString(gifurl, isempty = true).isEmpty()) {
+                    R.drawable.placeholder
+                } else {
+                    gifurl
+                },
+                tint = if (checkString(gifurl, isempty = true).isEmpty()) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    null
+                },
+                modifier = modifier
+                    .padding(top = 5.dp)
+                    .height(100.dp)
+                    .width(200.dp)
+            )
+
+            CustomCheckBox(
+                title = stringResource(R.string.show),
+                value = isShow,
+                onValueChange = {
+                    exerciseAddViewModel.setisShow(it)
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            CustomButton(
+                value = if (checkString(exercise.name, isempty = true).isEmpty()) {
+                    stringResource(R.string.add_exercise)
+                } else {
+                    stringResource(R.string.edit_exercise)
+                }, onClick = {
+                    exerciseAddViewModel.validateForm()
+                }, modifier = modifier.fillMaxWidth()
+            )
+        }
+    }
 }
