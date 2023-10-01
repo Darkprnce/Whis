@@ -14,37 +14,37 @@ import retrofit2.http.POST
 
 interface ApiServices {
 
-    @POST("workout_list")
+    @POST("admin_workout_list")
     suspend fun workout_list(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
     ): ApiResponse<WorkoutListBean?>
 
-    @POST("add_workout")
+    @POST("admin_add_workout")
     suspend fun workout_add(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
     ): ApiResponse<WorkoutAddBean?>
 
-    @POST("remove_workout")
+    @POST("admin_remove_workout")
     suspend fun workout_remove(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
     ): ApiResponse<WorkoutRemoveBean?>
 
-    @POST("exercise_list")
+    @POST("admin_exercise_list")
     suspend fun exercise_list(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
     ): ApiResponse<ExerciseListBean?>
 
-    @POST("add_exercise")
+    @POST("admin_add_exercise")
     suspend fun exercise_add(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?
     ): ApiResponse<ExerciseAddBean?>
 
-    @POST("remove_exercise")
+    @POST("admin_remove_exercise")
     suspend fun exercise_remove(
         @Header("api_key") api_key: String,
         @Body body: HashMap<String?, Any?>?

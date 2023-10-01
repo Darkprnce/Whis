@@ -3,7 +3,6 @@ package com.whis
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -53,7 +52,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val navHostController = rememberNavController()
-                    var navigationSelectedItem by remember { mutableIntStateOf(0) }
+                    var navPos by remember { mutableIntStateOf(0) }
                     val bottomBarState = rememberSaveable { (mutableStateOf(true)) }
                     val sharedViewModel: SharedViewModel = hiltViewModel()
 
@@ -70,7 +69,7 @@ class MainActivity : ComponentActivity() {
                                     content = {
                                         LaunchedEffect(Unit) {
                                             bottomBarState.value = true
-                                            navigationSelectedItem = 0
+                                            navPos = 0
                                         }
                                         WorkoutListScreen(
                                             sharedViewModel = sharedViewModel,
@@ -95,7 +94,7 @@ class MainActivity : ComponentActivity() {
                                     content = {
                                         LaunchedEffect(Unit) {
                                             bottomBarState.value = true
-                                            navigationSelectedItem = 1
+                                            navPos = 1
                                         }
                                         ExerciseListScreen(
                                             sharedViewModel = sharedViewModel,
@@ -129,11 +128,11 @@ class MainActivity : ComponentActivity() {
                                 BottomNavigationItem().bottomNavigationItems()
                                     .forEachIndexed { index, navigationItem ->
                                         NavigationBarItem(
-                                            selected = index == navigationSelectedItem,
+                                            selected = index == navPos,
                                             label = {
                                                 CustomText(
                                                     navigationItem.label, color =
-                                                    if (index == navigationSelectedItem) {
+                                                    if (index == navPos) {
                                                         White
                                                     } else {
                                                         WhiteSmoke
@@ -147,7 +146,7 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             },
                                             onClick = {
-                                                navigationSelectedItem = index
+                                                navPos = index
                                                 navHostController.navigate(navigationItem.route) {
                                                     popUpTo(navHostController.graph.findStartDestination().id) {
                                                         saveState = true
